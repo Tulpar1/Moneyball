@@ -35,3 +35,19 @@ CREATE TABLE Players (
     current_club_domestic_competition_id VARCHAR(50), -- League/competition ID (e.g. GB1, TR1)
     current_club_name VARCHAR(255)                    -- Name of current club
 );
+
+-- =========================================
+-- TABLE: Competitions
+-- =========================================
+CREATE TABLE IF NOT EXISTS Competitions (
+    competition_id        VARCHAR(16) PRIMARY KEY,  -- ör: GB1, CL, IT1 (harf/rakam)
+    competition_code      VARCHAR(64),             -- slug: premier-league, cl, ...
+    name                  VARCHAR(128),            -- display name
+    sub_type              VARCHAR(64),             -- first_tier | domestic_cup | domestic_super_cup | ...
+    type                  VARCHAR(64),             -- domestic_league | international_cup | other
+    country_id            INTEGER,                 -- -1 ise uluslararası
+    country_name          VARCHAR(64),
+    domestic_league_code  VARCHAR(16),             -- ör: GB1, ES1
+    confederation         VARCHAR(32),             -- UEFA, CONMEBOL, europa (csv’de böyle geçiyor)
+    url                   TEXT
+);
