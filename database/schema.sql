@@ -51,3 +51,23 @@ CREATE TABLE IF NOT EXISTS Competitions (
     confederation         VARCHAR(32),             -- UEFA, CONMEBOL, europa (csv’de böyle geçiyor)
     url                   TEXT
 );
+
+-- =========================================
+-- TABLE: PlayerValuations
+-- Purpose: Historical market values (time series) per player.
+-- PK: (player_id, date)
+-- =========================================
+CREATE TABLE IF NOT EXISTS PlayerValuations (
+    player_id                             INTEGER      NOT NULL,
+    last_season                           INTEGER,
+    datetime                              TIMESTAMP,   -- e.g. 2003-12-09 00:00:00
+    date                                  DATE         NOT NULL,  -- e.g. 2003-12-09
+    dateweek                              DATE,        -- start-of-week date if provided
+    market_value_in_eur                   BIGINT,
+    n                                     INTEGER,     -- sequence/index in original source
+    current_club_id                       INTEGER,
+    player_club_domestic_competition_id   VARCHAR(16), -- e.g. TR1, GB1, IT1
+    PRIMARY KEY (player_id, date)
+    -- FOREIGN KEY (player_id) REFERENCES Players(player_id)
+    -- FOREIGN KEY (current_club_id) REFERENCES Clubs(club_id)
+);
