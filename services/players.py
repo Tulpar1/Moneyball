@@ -34,3 +34,14 @@ def get_top_players(limit=10):
         key=lambda p: float(p.market_value_in_eur or 0),
         reverse=True
     )[:limit]
+
+def get_players_by_position(position):
+    """
+    Return all players who play in a given position.
+    Example input: "Midfield", "Defender", "Attack", "Goalkeeper".
+    Matching is case-sensitive based on stored data.
+    """
+    from Database import db
+    players = db.players.all()
+    return [p for p in players if p.position == position]
+
