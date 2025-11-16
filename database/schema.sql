@@ -71,3 +71,21 @@ CREATE TABLE IF NOT EXISTS PlayerValuations (
     -- FOREIGN KEY (player_id) REFERENCES Players(player_id)
     -- FOREIGN KEY (current_club_id) REFERENCES Clubs(club_id)
 );
+
+CREATE TABLE IF NOT EXISTS Appearances (
+    appearance_id VARCHAR(255) PRIMARY KEY,
+    game_id INTEGER,
+    player_id INTEGER,
+    player_club_id INTEGER,
+    player_current_club_id INTEGER,
+    date DATE,
+    player_name VARCHAR(255),
+    competition_id VARCHAR(16),
+    yellow_cards INTEGER DEFAULT 0,
+    red_cards INTEGER DEFAULT 0,
+    assist INTEGER DEFAULT 0,
+    minutes_played INTEGER DEFAULT 0
+
+    -- FOREIGN KEY (player_id) REFERENCES Players(player_id),
+    -- FOREIGN KEY (competition_id) REFERENCES Competitions(competition_id)
+);
