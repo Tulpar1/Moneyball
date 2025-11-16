@@ -70,4 +70,24 @@ def get_players_older_than(age):
 
     return result
 
+def get_players_younger_than(age):
+    """
+    Returns all players younger than the given age.
+    Players without valid or parsable date_of_birth are skipped.
+    """
+    players = db.players.all()
+    result = []
+
+    for p in players:
+        if p.date_of_birth:
+            try:
+                dob = datetime.strptime(p.date_of_birth, "%Y-%m-%d")
+                player_age = (datetime.now() - dob).days // 365
+                if player_age < age:
+                    result.append(p)
+            except:
+                pass
+    return result
+
+
 
