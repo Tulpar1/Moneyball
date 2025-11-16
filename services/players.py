@@ -45,3 +45,29 @@ def get_players_by_position(position):
     players = db.players.all()
     return [p for p in players if p.position == position]
 
+from datetime import datetime
+
+def get_players_older_than(age):
+    """
+    Returns all players older than the given age.
+    Uses the player's date_of_birth field to calculate age.
+    Players without valid date_of_birth are ignored.
+    """
+    players = db.players.all()
+    result = []
+
+    for p in players:
+        if p.date_of_birth:
+            try:
+                dob = datetime.strptime(p.date_of_birth, "%Y-%m-%d")
+                player_age = (datetime.now() - dob).days // 365
+
+                if player_age > age:
+                    result.append(p)
+            except:
+                # Skip invalid dates
+                pass
+
+    return result
+
+
