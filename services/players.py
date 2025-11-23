@@ -89,5 +89,30 @@ def get_players_younger_than(age):
                 pass
     return result
 
+def get_undervalued_players(threshold_ratio=0.5):
+    """
+    Returns players whose current market value is significantly lower
+    than their historical highest market value.
+    Example: threshold_ratio=0.5 means current value < 50% of peak value.
+    Players missing value data are ignored.
+    """
+    players = db.players.all()
+    result = []
+
+    for p in players:
+        try:
+            current = float(p.market_value_in_eur or 0)
+            peak = float(p.highest_market_value_in_eur or 0)
+
+            if peak > 0 and current > 0:
+                ratio = current / peak
+                if ratio < threshold_ratio:
+                    result.append(p)
+        except:
+            pass
+
+    return result
+
+
 
 
