@@ -36,3 +36,6 @@ class Players:
         self.url = url
         self.current_club_domestic_competition_id = current_club_domestic_competition_id
         self.current_club_name = current_club_name
+
+def __repr__(self):
+    return f"<Player {self.player_id} - {self.name}>"
