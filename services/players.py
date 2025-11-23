@@ -113,6 +113,18 @@ def get_undervalued_players(threshold_ratio=0.5):
 
     return result
 
+def get_players_by_country(country):
+    """
+    Return all players whose citizenship matches the given country.
+    Case-insensitive comparison.
+    """
+    players = db.players.all()
+    return [
+        p for p in players
+        if p.country_of_citizenship
+        and p.country_of_citizenship.lower() == country.lower()
+    ]
+
 
 
 
