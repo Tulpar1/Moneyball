@@ -34,3 +34,82 @@ main {
     padding: 2rem;
     box-sizing: border-box;
 }
+
+/* ... (Mevcut kodların altına ekle) ... */
+
+/* Linklerin varsayılan alt çizgisini kaldır */
+a { text-decoration: none; }
+
+.container { text-align: center; }
+
+/* Ana Sayfa Grid Yapısı */
+.grid-menu {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-top: 2rem;
+}
+
+/* Tablo Butonları (Kartlar) */
+.card-btn {
+    background: #f9f9f9;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: #333;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.card-btn:hover {
+    transform: translateY(-5px);
+    background-color: #38A169;
+    color: white;
+    box-shadow: 0 10px 15px rgba(56, 161, 105, 0.2);
+    border-color: #38A169;
+}
+
+.card-btn .icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.card-btn span {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+/* Tablo Sayfası Başlık ve Buton Düzeni */
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 1rem;
+}
+
+/* Yeşil (+) Ekleme Butonu */
+.add-btn {
+    background-color: #38A169;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s;
+}
+
+.add-btn:hover {
+    background-color: #2F855A;
+}
+
+.back-link {
+    margin-top: 2rem;
+}

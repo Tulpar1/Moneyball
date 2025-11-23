@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="table-header">
+    <h2>Table: <span style="color: #38A169;">{{ table_name.replace('_', ' ').title() }}</span></h2>
+    
+    <a href="{{ url_for('add_record', table_name=table_name) }}" class="add-btn">
+        <i class="fa-solid fa-plus"></i> Add
+    </a>
+</div>
+
+<div class="data-container">
+    <p>Now presenting <code>{{ table_name }}</code> table </p>
+</div>
+
+<div class="back-link">
+    <a href="{{ url_for('index') }}">&larr; Return to list</a>
+</div>
+{% endblock %}

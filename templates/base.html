@@ -5,16 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Moneyball Project</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
 
     <header>
-        <h1>Moneyball</h1>
+        <h1><a href="{{ url_for('index') }}" style="text-decoration: none; color: inherit;">Moneyball DB</a></h1>
     </header>
 
     <main>
-        <!-- Gelecekteki içerik buraya eklenecek -->
+        {% block content %}
+        {% endblock %}
     </main>
 
     <script src="{{ url_for('static', filename='base.js') }}" defer></script>
 </body>
+</html>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h2>Database Management Panel</h2>
+    <div class="grid-menu">
+        {% for table in tables %}
+            <a href="{{ url_for('show_table', table_name=table) }}" class="card-btn">
+                <div class="icon"><i class="fa-solid fa-table"></i></div>
+
+                <span>{{ table.replace('_', ' ').title() }}</span>
+
+                <small style="color: #888; font-size: 0.8rem;">({{ table }})</small>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
