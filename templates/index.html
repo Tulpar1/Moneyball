@@ -1,18 +1,19 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container">
-    <h2>Database Management Panel</h2>
-    <div class="grid-menu">
-        {% for table in tables %}
-            <a href="{{ url_for('show_table', table_name=table) }}" class="card-btn">
-                <div class="icon"><i class="fa-solid fa-table"></i></div>
+<h2 style="margin-bottom: 2rem;">Database Management</h2>
 
-                <span>{{ table.replace('_', ' ').title() }}</span>
-
-                <small style="color: #888; font-size: 0.8rem;">({{ table }})</small>
-            </a>
-        {% endfor %}
-    </div>
+<div class="grid-menu">
+    {% for key, val in tables.items() %}
+        <a href="{{ url_for('show_table', table_name=key) }}" class="card-btn">
+            
+            <div style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;">
+                <i class="{{ val['icon'] }}"></i>
+            </div>
+            
+            <span>{{ val['title'] }}</span>
+            <small style="color: var(--text-light); font-size: 0.8rem; display:block; margin-top:4px;">{{ key }}</small>
+        </a>
+    {% endfor %}
 </div>
 {% endblock %}

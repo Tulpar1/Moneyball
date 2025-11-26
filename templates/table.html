@@ -1,19 +1,49 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="table-header">
-    <h2>Table: <span style="color: #38A169;">{{ table_name.replace('_', ' ').title() }}</span></h2>
+<div class="header-actions">
+    <div>
+        <h2 style="margin:0;">
+            <i class="{{ icon }}" style="margin-right:10px; color:var(--primary-color);"></i>
+            {{ title }}
+        </h2>
+    </div>
     
-    <a href="{{ url_for('add_record', table_name=table_name) }}" class="add-btn">
-        <i class="fa-solid fa-plus"></i> Add
+    <a href="{{ url_for('add_record', table_name=table_name) }}" class="btn btn-primary">
+        <i class="fa-solid fa-plus" style="margin-right:8px;"></i> Add New Record
     </a>
 </div>
 
-<div class="data-container">
-    <p>Now presenting <code>{{ table_name }}</code> table </p>
+<div class="table-wrapper">
+    <table>
+        <thead>
+            <tr>
+                {% for col in columns %}
+                <th>{{ col.replace('_', ' ').title() }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% if data %}
+                {% for row in data %}
+                <tr>
+                    {% for col in columns %}
+                    <td>{{ row[col] }}</td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="{{ columns|length }}" style="text-align:center; padding: 2rem;">
+                        No data entered yet.
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
 </div>
 
-<div class="back-link">
-    <a href="{{ url_for('index') }}">&larr; Return to list</a>
+<div style="margin-top: 1.5rem;">
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">&larr; Return to Menu</a>
 </div>
 {% endblock %}

@@ -1,0 +1,31 @@
+# --- Python Gereksizleri ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- Sanal Ortam (Varsa) ---
+venv/
+.venv/
+env/
+
+# --- IDE Ayarları (PyCharm / VS Code) ---
+# Bunlar senin kişisel ayarlarındır, repoya gitmemeli
+.idea/
+.vscode/
+*.swp
+
+# --- İşletim Sistemi Çöpleri ---
+.DS_Store
+Thumbs.db
+
+# --- PROJEYE ÖZEL ---
+
+
+
+
+# Eğer veritabanı yedeğini de atmak istemezsen:
+# *.sql
+
+# --- HASSAS BİLGİLER ---
+# Eğer settings.py içinde şifrelerin varsa yorum satırını kaldır:
+# settings.py
