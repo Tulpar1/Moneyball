@@ -34,7 +34,34 @@ TABLE_SCHEMAS = {
         "title": "Market Values",
         "icon": "fa-solid fa-line-chart",
         "columns": ["player_id", "date", "market_value_in_eur", "current_club_id"]
-    }
+    },
+    "games": {
+        "title": "Match Details",
+        "icon": "fa-solid fa-trophy", 
+        "columns": [
+            "game_id", 
+            "date", 
+            "competition_id",           # Hangi ligde/kupada oynandı? (Analiz için çok önemli)
+            "home_club_name", 
+            "away_club_name", 
+            "home_club_goals", 
+            "away_club_goals",
+            "stadium",                  # Maçın Ev Sahibi/Deplasman dengesi için önemli
+            "referee"                   # Hakem verisi (Analitik varyasyon için)
+        ]
+    },
+    "game_events": {
+        "title": "Match Events",
+        "icon": "fa-solid fa-bell", 
+        "columns": [
+            "game_id", 
+            "minute", 
+            "type", 
+            "club_id",                  # Hangi kulübün olayı gerçekleştirdiği (H/A ayrımı)
+            "player_id", 
+            "description"
+    ]
+}
 }
 
 @app.route('/')
