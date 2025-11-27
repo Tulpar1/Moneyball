@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 from services import appearances as appearance_service
 from services import players as players_service
+from services import games as games_service  
+from services import game_events as events_service
 app = Flask(__name__)
 
 
@@ -34,7 +36,35 @@ TABLE_SCHEMAS = {
         "title": "Market Values",
         "icon": "fa-solid fa-line-chart",
         "columns": ["player_id", "date", "market_value_in_eur", "current_club_id"]
-    }
+    },
+    "games": {
+        "title": "Match Details",
+        "icon": "fa-solid fa-trophy", 
+        "columns": [
+            "game_id", 
+            "date", 
+            "competition_id",           # Hangi ligde/kupada oynandı? (Analiz için çok önemli)
+            "home_club_name", 
+            "away_club_name", 
+            "home_club_goals", 
+            "away_club_goals",
+            "stadium",                  # Maçın Ev Sahibi/Deplasman dengesi için önemli
+            "referee"                   # Hakem verisi (Analitik varyasyon için)
+        ]
+    },
+    "game_events": {
+        "title": "Match Events",
+        "icon": "fa-solid fa-bell", 
+        "columns": [
+            "game_id", 
+            "minute", 
+            "type", 
+            "club_id",                  # Hangi kulübün olayı gerçekleştirdiği (H/A ayrımı)
+            "player_id", 
+            "description"
+    ]
+}
+
 }
 
 @app.route('/')
@@ -51,10 +81,15 @@ def show_table(table_name):
 
     # 1. Hangi tablo istendiyse onun servisine git
     if table_name == 'appearances':
-        # Servisten Model Objeleri Listesi gelir
         data_objects = appearance_service.get_all_appearances(limit=50)
-    if table_name == 'players':
+    elif table_name == 'players':   # 'elif' kullanmak daha verimlidir
         data_objects = players_service.get_all_players(limit=50)
+    elif table_name == 'games':     # YENİ EKLEME: Games Servisi
+        # games_service.get_all_games fonksiyonunun limit=50 alabilmesi gerekir.
+        data_objects = games_service.get_all_games(limit=50)
+    elif table_name == 'game_events': # YENİ EKLEME: Game Events Servisi
+        # events_service.get_all_game_events fonksiyonu gereklidir.
+        data_objects = events_service.get_all_game_events(limit=50)
     # Not: İleride elif table_name == 'players': ... diye gidecek
 
     # 2. Template objeleri (row.player_name) okuyabilir ama
@@ -63,10 +98,10 @@ def show_table(table_name):
     data_dicts = [vars(obj) for obj in data_objects]
 
     return render_template('table.html', 
-                         table_name=table_name, 
-                         title=schema['title'],
-                         columns=schema['columns'],
-                         data=data_dicts)
+                            table_name=table_name, 
+                            title=schema['title'],
+                            columns=schema['columns'],
+                            data=data_dicts)
 
 @app.route('/table/<table_name>/add', methods=['GET', 'POST'])
 def add_record(table_name):
@@ -80,10 +115,13 @@ def add_record(table_name):
         
         # INSERT İşlemi
         if table_name == 'appearances':
-           
             result = appearance_service.insert_appearance(form_data)
-        if table_name == 'players':
+        elif table_name == 'players':
             result = players_service.insert_player(form_data)
+        elif table_name == 'games':        # YENİ EKLEME: Games Insert
+            result = games_service.insert_game(form_data)
+        elif table_name == 'game_events':  # YENİ EKLEME: Game Events Insert
+            result = events_service.insert_game_event(form_data)
             
             if "Error" in str(result):
                 return f"Hata oluştu: {result}"
