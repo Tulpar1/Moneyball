@@ -91,12 +91,12 @@ def add_record(table_name):
         form_data = request.form.to_dict()
         
         # INSERT İşlemi
-        if table_name == 'appearances':
-           
+        if table_name == 'appearances':        
             result = appearance_service.insert_appearance(form_data)
         if table_name == 'players':
             result = players_service.insert_player(form_data)
-            
+        #Insert sonu
+          
             if "Error" in str(result):
                 return f"Hata oluştu: {result}"
                 

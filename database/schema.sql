@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS Appearances (
     competition_id VARCHAR(16),
     yellow_cards INTEGER DEFAULT 0,
     red_cards INTEGER DEFAULT 0,
-    assist INTEGER DEFAULT 0,
+    assists INTEGER DEFAULT 0,
     minutes_played INTEGER DEFAULT 0
 
     -- FOREIGN KEY (player_id) REFERENCES Players(player_id),
