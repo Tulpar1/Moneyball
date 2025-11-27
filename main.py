@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for
 from services import appearances as appearance_service
 from services import players as players_service
+from services import games as games_service
+from services import game_events as events_service
 app = Flask(__name__)
 
 
@@ -82,12 +84,22 @@ def show_table(table_name):
     total_count=0
 
     # 1. Hangi tablo istendiyse onun servisine git
+       # 1. Hangi tablo istendiyse onun servisine git
     if table_name == 'appearances':
         data_objects = appearance_service.get_all_appearances(page, per_page, search_term)
         total_count = appearance_service.get_total_appearance_count(search_term)
-    if table_name == 'players':
+    elif table_name == 'players':   # 'elif' kullanmak daha verimlidir
         data_objects = players_service.get_all_players(page, per_page, search_term)
-        total_count = players_service.get_total_player_count() # Yeni fonksiyonu burada kullan
+        total_count = appearance_service.get_total_appearance_count(search_term)
+    elif table_name == 'games':     # YENİ EKLEME: Games Servisi
+        # games_service.get_all_games fonksiyonunun limit=50 alabilmesi gerekir.
+        data_objects = games_service.get_all_games(page, per_page, search_term)
+        total_count = games_service.get_total_game_count(search_term)
+    elif table_name == 'game_events': # YENİ EKLEME: Game Events Servisi
+        # events_service.get_all_game_events fonksiyonu gereklidir.
+        data_objects = events_service.get_all_events(page, per_page, search_term)
+        total_count = events_service.get_total_event_count(search_term)
+    # Not: İleride elif table_name == 'players': ... diye gidecek     
 
     # 2. Template objeleri (row.player_name) okuyabilir ama
     # generic template (row['player_name']) bekliyorsa dönüşüm yapmalıyız.
@@ -118,10 +130,14 @@ def add_record(table_name):
         form_data = request.form.to_dict()
         
         # INSERT İşlemi
-        if table_name == 'appearances':        
+        if table_name == 'appearances':
             result = appearance_service.insert_appearance(form_data)
-        if table_name == 'players':
+        elif table_name == 'players':
             result = players_service.insert_player(form_data)
+        elif table_name == 'games':        # YENİ EKLEME: Games Insert
+            result = games_service.insert_game(form_data)
+        elif table_name == 'game_events':  # YENİ EKLEME: Game Events Insert
+            result = events_service.insert_game_event(form_data)
         #Insert sonu
           
             if "Error" in str(result):
