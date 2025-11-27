@@ -23,7 +23,7 @@ TABLE_SCHEMAS = {
     "appearances": {
         "title": "Match Statistics",
         "icon": "fa-solid fa-person-running",
-        "columns": ["appearance_id", "game_id", "player_id", "goals", "assists", "minutes_played"]
+        "columns": ["appearance_id", "player_name", "player_id", "competition_id", "assists", "minutes_played"]
     },
     "club_games": {
         "title": "Club Matches",
@@ -46,27 +46,39 @@ def show_table(table_name):
     if table_name not in TABLE_SCHEMAS:
         return "Tablo bulunamadı", 404
     
+    page = request.args.get('page', 1, type=int) # Hangi sayfadayız? (Varsayılan 1)
+    per_page = 50 # Sayfa başına 50 kayıt gösterelim
+    search_term = request.args.get('q', '').strip()
+
     schema = TABLE_SCHEMAS[table_name]
     data_objects = []
+    total_count=0
 
     # 1. Hangi tablo istendiyse onun servisine git
     if table_name == 'appearances':
-        # Servisten Model Objeleri Listesi gelir
-        data_objects = appearance_service.get_all_appearances(limit=50)
+        data_objects = appearance_service.get_all_appearances(page, per_page, search_term)
+        total_count = appearance_service.get_total_appearance_count(search_term)
     if table_name == 'players':
-        data_objects = players_service.get_all_players(limit=50)
-    # Not: İleride elif table_name == 'players': ... diye gidecek
+        data_objects = players_service.get_all_players(page, per_page, search_term)
+        total_count = players_service.get_total_player_count() # Yeni fonksiyonu burada kullan
 
     # 2. Template objeleri (row.player_name) okuyabilir ama
     # generic template (row['player_name']) bekliyorsa dönüşüm yapmalıyız.
     # Bizim template yapımız row['col'] şeklinde olduğu için objeleri dict'e çeviriyoruz:
+    total_pages = (total_count + per_page - 1) // per_page
+    
     data_dicts = [vars(obj) for obj in data_objects]
 
     return render_template('table.html', 
                          table_name=table_name, 
                          title=schema['title'],
                          columns=schema['columns'],
-                         data=data_dicts)
+                         data=data_dicts,
+                         current_page=page,
+                         total_pages=total_pages,
+                         total_count=total_count,
+                         per_page=per_page,
+                         search_term=search_term)
 
 @app.route('/table/<table_name>/add', methods=['GET', 'POST'])
 def add_record(table_name):

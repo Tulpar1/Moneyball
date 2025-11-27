@@ -45,32 +45,73 @@ def get_player(player_id):
     return db.players.get(player_id)
 
 
-def get_all_players(limit=100):
+def get_total_player_count():
     conn = db.get_connection()
-    results_list = []
     try:
         cursor = conn.cursor()
-              
-        query = f"SELECT {SELECT_FIELDS} FROM players ORDER BY name ASC LIMIT %s"
-        cursor.execute(query, (limit,))       
-        results = cursor.fetchall()           
+        query = "SELECT COUNT(*) FROM players"
+        cursor.execute(query)
+        result = cursor.fetchone()
+        return result['COUNT(*)'] if result else 0
+    except Exception as e:
+        print(f"Hata (get_total_player_count): {e}")
+        return 0
+    finally:
+        if conn: conn.close()
+
+# --- Search ve Pagination Desteği için get_all_players fonksiyonunu güncelle ---
+def get_all_players(page=1, per_page=50, search_term=""):
+    conn = db.get_connection()
+    results_list = []
+    
+    # Sayfalama için offset hesaplama
+    offset = (page - 1) * per_page
+    
+    # Arama terimi için WHERE koşulu oluşturma
+    where_clause = ""
+    query_params = [per_page, offset]
+    
+    if search_term:
+        search_like = f"%{search_term}%"
+        # Not: Arama yapılacak sütunları burada listelemelisin (name, position, country_of_birth gibi)
+        search_cols = ["name", "position", "country_of_birth", "player_code"]
+        
+        where_conditions = [f"{col} LIKE %s" for col in search_cols]
+        where_clause = " WHERE " + " OR ".join(where_conditions)
+        
+        # LIMIT ve OFFSET'ten önce arama parametrelerini eklemeliyiz
+        query_params = [search_like] * len(search_cols) + [per_page, offset]
+
+
+    try:
+        cursor = conn.cursor()
+        
+        
+        query = f"""
+            SELECT {SELECT_FIELDS} FROM players
+            {where_clause}
+            ORDER BY name ASC 
+            LIMIT %s OFFSET %s
+        """
+        
+        # LIMIT ve OFFSET parametreleri query_params'ın sonunda olmalı.
+        cursor.execute(query, tuple(query_params))       
+        results = cursor.fetchall()
+        
         for row in results:
-           
             try:
                 obj = Players(**row)
                 results_list.append(obj)
             except TypeError as e:
-                
-                print(f"Model conversion error (Row skipped): {e}")
+                print(f"Model çevrim hatası (Satır atlandı): {e}")
 
         return results_list
 
     except Exception as e:
-        print(f"Error (get_all_players: {e}")
+        print(f"Hata (get_all_players): {e}")
         return []
     finally:
-        if conn:
-            conn.close()
+        if conn: conn.close()
 
 
 def get_top_players(limit=10):

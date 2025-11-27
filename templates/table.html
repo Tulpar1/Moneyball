@@ -2,16 +2,30 @@
 
 {% block content %}
 <div class="header-actions">
-    <div>
+    <div style="flex-grow: 1;">
         <h2 style="margin:0;">
             <i class="{{ icon }}" style="margin-right:10px; color:var(--primary-color);"></i>
             {{ title }}
         </h2>
+        {% if total_count is defined %}
+        <small style="color:var(--text-light)">Table: {{ table_name }} (Total Records: {{ total_count }})</small>
+        {% endif %}
     </div>
     
-    <a href="{{ url_for('add_record', table_name=table_name) }}" class="btn btn-primary">
-        <i class="fa-solid fa-plus" style="margin-right:8px;"></i> Add New Record
-    </a>
+    <div style="display: flex; gap: 15px; align-items: center;">
+        
+        <form method="GET" action="{{ url_for('show_table', table_name=table_name) }}" style="display: flex;">
+            <input type="text" name="q" placeholder="Search..." value="{{ search_term or '' }}" 
+                   style="padding: 8px; border: 1px solid var(--border-color); border-radius: 6px 0 0 6px;">
+            <button type="submit" class="btn btn-secondary" style="border-radius: 0 6px 6px 0; border-left: none;">
+                <i class="fa-solid fa-search"></i>
+            </button>
+        </form>
+
+        <a href="{{ url_for('add_record', table_name=table_name) }}" class="btn btn-primary">
+            <i class="fa-solid fa-plus" style="margin-right:8px;"></i> Add New Record
+        </a>
+    </div>
 </div>
 
 <div class="table-wrapper">
@@ -42,6 +56,30 @@
         </tbody>
     </table>
 </div>
+
+{% if total_pages is defined and total_pages > 1 %}
+<div style="display: flex; justify-content: center; align-items: center; margin-top: 2rem; gap: 20px;">
+    
+    {% if current_page > 1 %}
+        <a href="{{ url_for('show_table', table_name=table_name, page=current_page - 1, q=search_term) }}" 
+           class="btn btn-secondary"><i class="fa-solid fa-chevron-left"></i> Previous</a>
+    {% else %}
+        <button class="btn btn-secondary" disabled><i class="fa-solid fa-chevron-left"></i> Previous</button>
+    {% endif %}
+
+    <span style="font-weight: 600; font-size: 1.1rem;">
+        {{ current_page }} / {{ total_pages }} 
+    </span>
+    
+    {% if current_page < total_pages %}
+        <a href="{{ url_for('show_table', table_name=table_name, page=current_page + 1, q=search_term) }}" 
+           class="btn btn-secondary">Next <i class="fa-solid fa-chevron-right"></i></a>
+    {% else %}
+        <button class="btn btn-secondary" disabled>Next <i class="fa-solid fa-chevron-right"></i></button>
+    {% endif %}
+
+</div>
+{% endif %}
 
 <div style="margin-top: 1.5rem;">
     <a href="{{ url_for('index') }}" class="btn btn-secondary">&larr; Return to Menu</a>

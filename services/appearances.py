@@ -117,23 +117,77 @@ def search_appearances_by_player(player_id):
             conn.close()
 
 # ---(List All)---
-def get_all_appearances(limit=100):
+def get_total_appearance_count(search_term=""):
     conn = db.get_connection()
-    results_list = []
     try:
         cursor = conn.cursor()
-              
-        query = f"SELECT {SELECT_FIELDS} FROM appearances ORDER BY date DESC LIMIT %s"
-        cursor.execute(query, (limit,))       
-        results = cursor.fetchall()           
+        
+        # Arama terimi varsa, toplam sayıyı da filtreleyerek hesaplamalıyız
+        where_clause = ""
+        query_params = []
+        
+        if search_term:
+            search_like = f"%{search_term}%"
+            search_cols = ["player_name", "appearance_id", "competition_id"]
+            where_conditions = [f"{col} LIKE %s" for col in search_cols]
+            where_clause = " WHERE " + " OR ".join(where_conditions)
+            query_params = [search_like] * len(search_cols)
+
+        query = f"SELECT COUNT(*) FROM appearances {where_clause}"
+        cursor.execute(query, tuple(query_params))
+        result = cursor.fetchone()
+        
+        # DictCursor kullandığımız için anahtarı 'COUNT(*)' olacaktır.
+        return result['COUNT(*)'] if result else 0 
+        
+    except Exception as e:
+        print(f"Error (get_total_appearance_count): {e}")
+        return 0
+    finally:
+        if conn: conn.close()
+
+
+# --- Search and Pagination support for get_all_appearances ---
+def get_all_appearances(page=1, per_page=50, search_term=""):
+    conn = db.get_connection()
+    results_list = []
+    
+    offset = (page - 1) * per_page
+    
+    where_clause = ""
+    query_params = []
+    
+    if search_term:
+        search_like = f"%{search_term}%"
+        search_cols = ["player_name", "appearance_id", "competition_id"]
+        where_conditions = [f"{col} LIKE %s" for col in search_cols]
+        where_clause = " WHERE " + " OR ".join(where_conditions)
+        query_params = [search_like] * len(search_cols)
+
+    # Append LIMIT and OFFSET parameters to the end
+    query_params.extend([per_page, offset])
+
+    try:
+        cursor = conn.cursor()
+        
+        query = f"""
+            SELECT {SELECT_FIELDS} FROM appearances
+            {where_clause}
+            ORDER BY player_name ASC 
+            LIMIT %s OFFSET %s
+        """
+        
+        cursor.execute(query, tuple(query_params))       
+        results = cursor.fetchall()
+        
         for row in results:
-           
             try:
+                # Assuming Appearances class handles all fields correctly
                 obj = Appearances(**row)
                 results_list.append(obj)
             except TypeError as e:
-                
-                print(f"Model conversion error (Row skipped): {e}")
+                # This should be checked and fixed if encountered!
+                print(f"Model conversion error (Row skipped): {e}") 
 
         return results_list
 
@@ -141,5 +195,4 @@ def get_all_appearances(limit=100):
         print(f"Error (get_all_appearances): {e}")
         return []
     finally:
-        if conn:
-            conn.close()
+        if conn: conn.close()
