@@ -104,7 +104,7 @@ def show_table(table_name):
     elif table_name == 'competitions':   # 'elif' kullanmak daha verimlidir
         data_objects = competitions_service.get_all_competitions(page, per_page, search_term)
         total_count = competitions_service.get_total_competition_count(search_term)
-    elif table_name == 'playervaluations'  # 'elif' kullanmak daha verimlidir
+    elif table_name == 'playervaluations': # 'elif' kullanmak daha verimlidir
         data_objects = playervaluations_service.get_all_valuations(page, per_page, search_term)
         total_count = playervaluations_service.get_total_valuation_count(search_term)
     # Not: İleride elif table_name == 'players': ... diye gidecek     
