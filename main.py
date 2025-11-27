@@ -137,7 +137,7 @@ def add_record(table_name):
         elif table_name == 'games':        # YENİ EKLEME: Games Insert
             result = games_service.insert_game(form_data)
         elif table_name == 'game_events':  # YENİ EKLEME: Game Events Insert
-            result = events_service.insert_game_event(form_data)
+            result = events_service.insert_event(form_data)
         #Insert sonu
           
             if "Error" in str(result):
