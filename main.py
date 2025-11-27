@@ -3,6 +3,8 @@ from services import appearances as appearance_service
 from services import players as players_service
 from services import games as games_service
 from services import game_events as events_service
+from services import competitions as competitions_service
+from services import playervaluations as playervaluations_service
 app = Flask(__name__)
 
 
@@ -90,7 +92,7 @@ def show_table(table_name):
         total_count = appearance_service.get_total_appearance_count(search_term)
     elif table_name == 'players':   # 'elif' kullanmak daha verimlidir
         data_objects = players_service.get_all_players(page, per_page, search_term)
-        total_count = appearance_service.get_total_appearance_count(search_term)
+        total_count = players_service.get_total_player_count(search_term)
     elif table_name == 'games':     # YENİ EKLEME: Games Servisi
         # games_service.get_all_games fonksiyonunun limit=50 alabilmesi gerekir.
         data_objects = games_service.get_all_games(page, per_page, search_term)
@@ -99,6 +101,12 @@ def show_table(table_name):
         # events_service.get_all_game_events fonksiyonu gereklidir.
         data_objects = events_service.get_all_events(page, per_page, search_term)
         total_count = events_service.get_total_event_count(search_term)
+    elif table_name == 'competitions':   # 'elif' kullanmak daha verimlidir
+        data_objects = competitions_service.get_all_competitions(page, per_page, search_term)
+        total_count = competitions_service.get_total_competition_count(search_term)
+    elif table_name == 'playervaluations'  # 'elif' kullanmak daha verimlidir
+        data_objects = playervaluations_service.get_all_valuations(page, per_page, search_term)
+        total_count = playervaluations_service.get_total_valuation_count(search_term)
     # Not: İleride elif table_name == 'players': ... diye gidecek     
 
     # 2. Template objeleri (row.player_name) okuyabilir ama
@@ -138,6 +146,10 @@ def add_record(table_name):
             result = games_service.insert_game(form_data)
         elif table_name == 'game_events':  # YENİ EKLEME: Game Events Insert
             result = events_service.insert_event(form_data)
+        elif table_name == 'competitions':  # YENİ EKLEME: Game Events Insert
+            result = competitions_service.insert_competition(form_data)
+        elif table_name == 'playervaluations':  # YENİ EKLEME: Game Events Insert
+            result = playervaluations_service.insert_valuation(form_data)
         #Insert sonu
           
             if "Error" in str(result):
