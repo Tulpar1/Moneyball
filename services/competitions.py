@@ -2,10 +2,11 @@ from Database import db
 from Models.Competitions import Competitions # 'Models.Competitions' varsayılıyor
 
 # Competitions Sınıfının tüm alanlarını listeleyelim
+# YENİ VE DÜZELTİLMİŞ TANIM
 COMPETITION_COLUMNS = [
-    'competition_id', 'name', 'type', 'country_id', 'country_name', 
-    'league_level', 'market_value_in_eur', 'num_clubs', 'num_players', 
-    'last_update', 'url', 'domestic_league_code'
+    'competition_id', 'competition_code', 'name', 'sub_type', 'type', 
+    'country_id', 'country_name', 'domestic_league_code', 'confederation', 
+    'url'
 ]
 
 SELECT_FIELDS = ', '.join(COMPETITION_COLUMNS)
