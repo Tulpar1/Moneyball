@@ -7,6 +7,36 @@
 from Database import db
 from Models.Players import Players
 
+PLAYERS_COLUMNS = [
+    'player_id', 
+    'first_name', 
+    'last_name', 
+    'name', 
+    'last_season', 
+    'current_club_id', 
+    'player_code', 
+    'country_of_birth', 
+    'city_of_birth', 
+    'country_of_citizenship', 
+    'date_of_birth', 
+    'sub_position', 
+    'position', 
+    'foot', 
+    'height_in_cm', 
+    'market_value_in_eur', 
+    'highest_market_value_in_eur', 
+    'contract_expiration_date', 
+    'agent_name', 
+    'image_url', 
+    'url', 
+    'current_club_domestic_competition_id', 
+    'current_club_name'
+]
+
+SELECT_FIELDS = ', '.join(PLAYERS_COLUMNS)
+PLACEHOLDERS = ', '.join(['%s'] * len(PLAYERS_COLUMNS))
+
+
 def get_player(player_id):
     """
     Fetch a single player from the database by their unique player_id.
@@ -15,12 +45,32 @@ def get_player(player_id):
     return db.players.get(player_id)
 
 
-def get_all_players():
-    """
-    Retrieve all player records from the database.
-    Returns a list of Players objects.
-    """
-    return db.players.all()
+def get_all_players(limit=100):
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+              
+        query = f"SELECT {SELECT_FIELDS} FROM players ORDER BY name ASC LIMIT %s"
+        cursor.execute(query, (limit,))       
+        results = cursor.fetchall()           
+        for row in results:
+           
+            try:
+                obj = Players(**row)
+                results_list.append(obj)
+            except TypeError as e:
+                
+                print(f"Model conversion error (Row skipped): {e}")
+
+        return results_list
+
+    except Exception as e:
+        print(f"Error (get_all_players: {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
 
 
 def get_top_players(limit=10):
@@ -125,6 +175,34 @@ def get_players_by_country(country):
         and p.country_of_citizenship.lower() == country.lower()
     ]
 
+def insert_player(player_data: dict):
+
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+
+
+        query = f"""
+        INSERT INTO players ({SELECT_FIELDS})
+        VALUES ({PLACEHOLDERS})
+        """
+
+        insert_values = [player_data.get(col) for col in PLAYERS_COLUMNS]
+
+        cursor.execute(query, tuple(insert_values))
+
+        new_id = player_data.get('player_id', cursor.lastrowid)
+
+        conn.commit()
+        cursor.close()
+        return new_id
+
+    except Exception as e:
+        print(f"Error (create_player): {e}")
+        return f"Error: {e}"
+    finally:
+        if conn:
+            conn.close()
 
 
 

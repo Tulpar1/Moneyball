@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for
 from services import appearances as appearance_service
-
+from services import players as players_service
 app = Flask(__name__)
 
 
@@ -53,7 +53,8 @@ def show_table(table_name):
     if table_name == 'appearances':
         # Servisten Model Objeleri Listesi gelir
         data_objects = appearance_service.get_all_appearances(limit=50)
-    
+    if table_name == 'players':
+        data_objects = players_service.get_all_players(limit=50)
     # Not: İleride elif table_name == 'players': ... diye gidecek
 
     # 2. Template objeleri (row.player_name) okuyabilir ama
@@ -81,6 +82,8 @@ def add_record(table_name):
         if table_name == 'appearances':
            
             result = appearance_service.insert_appearance(form_data)
+        if table_name == 'players':
+            result = players_service.insert_player(form_data)
             
             if "Error" in str(result):
                 return f"Hata oluştu: {result}"
