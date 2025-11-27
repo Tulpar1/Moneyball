@@ -5,7 +5,7 @@ from services import games as games_service
 from services import game_events as events_service
 from services import competitions as competitions_service
 from services import playervaluations as playervaluations_service
-app = Flask(__name__)
+app = Flask(__name__) 
 
 
 TABLE_SCHEMAS = {
