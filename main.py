@@ -92,7 +92,7 @@ def show_table(table_name):
         total_count = appearance_service.get_total_appearance_count(search_term)
     elif table_name == 'players':   # 'elif' kullanmak daha verimlidir
         data_objects = players_service.get_all_players(page, per_page, search_term)
-        total_count = players_service.get_total_player_count(search_term)
+        total_count = players_service.get_total_player_count()
     elif table_name == 'games':     # YENİ EKLEME: Games Servisi
         # games_service.get_all_games fonksiyonunun limit=50 alabilmesi gerekir.
         data_objects = games_service.get_all_games(page, per_page, search_term)
