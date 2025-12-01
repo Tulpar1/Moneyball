@@ -245,5 +245,18 @@ def insert_player(player_data: dict):
         if conn:
             conn.close()
 
+def get_players_by_foot(foot):
+    """
+    Return players whose dominant foot matches the given value.
+    Example inputs: 'right', 'left', 'both'
+    Case-insensitive comparison.
+    """
+    players = db.players.all()
+    return [
+        p for p in players
+        if p.foot and p.foot.lower() == foot.lower()
+    ]
+
+
 
 
