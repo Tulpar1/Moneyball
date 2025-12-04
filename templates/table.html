@@ -35,6 +35,8 @@
                 {% for col in columns %}
                 <th>{{ col.replace('_', ' ').title() }}</th>
                 {% endfor %}
+                
+                <th style="width: 80px; text-align: center;">Actions</th>
             </tr>
         </thead>
         <tbody>
@@ -44,15 +46,23 @@
                     {% for col in columns %}
                     <td>{{ row[col] }}</td>
                     {% endfor %}
+                    
+                    <td style="text-align: center;">
+                        <form action="{{ url_for('delete_record', table_name=table_name, id=row[columns[0]]) }}" 
+                              method="POST" 
+                              onsubmit="return confirm('Are you sure to delete this record ?\nThis action cant be undone.');"
+                              style="display: inline;">
+                            
+                            <button type="submit" class="btn-danger" title="Sil">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+
                 </tr>
                 {% endfor %}
             {% else %}
-                <tr>
-                    <td colspan="{{ columns|length }}" style="text-align:center; padding: 2rem;">
-                        No data entered yet.
-                    </td>
-                </tr>
-            {% endif %}
+                {% endif %}
         </tbody>
     </table>
 </div>

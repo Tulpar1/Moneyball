@@ -174,7 +174,7 @@ def add_record(table_name):
         #Insert sonu
           
             if "Error" in str(result):
-                return f"Hata oluştu: {result}"
+                return f"Error: {result}"
                 
         return redirect(url_for('show_table', table_name=table_name))
 
@@ -182,6 +182,26 @@ def add_record(table_name):
                          table_name=table_name, 
                          title=schema['title'],
                          columns=schema['columns'])
+
+@app.route('/table/<table_name>/delete/<id>', methods=['POST'])
+def delete_record(table_name, id):
+    if table_name not in TABLE_SCHEMAS:
+        return "No tables found", 404
+    
+    success = False
+
+    if table_name == 'appearances':
+        success = appearance_service.delete_appearance(id)
+        
+    elif table_name == 'players':
+        success = players_service.delete_player(id)
+        
+    # elif table_name == 'clubs':
+    #     success = club_service.delete_club(id)
+    if success:
+        return redirect(url_for('show_table', table_name=table_name))
+    else:
+        return f"Delete unsuccesful (ID: {id})"
 
 if __name__ == '__main__':
     app.run(debug=True)

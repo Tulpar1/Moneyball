@@ -184,3 +184,19 @@ tr:hover { background-color: #f9fafb; }
     align-items: center;
     margin-bottom: 1.5rem;
 }
+.btn-danger {
+    background-color: #ef4444; 
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-danger:hover {
+    background-color: #dc2626; 
+}
