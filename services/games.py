@@ -54,6 +54,7 @@ def insert_game(game_data: dict):
 
         cursor.execute(query, tuple(insert_values))
 
+        # Eğer game_id dışarıdan geliyorsa onu, yoksa auto-inc id'yi al
         new_id = game_data.get('game_id', cursor.lastrowid)
 
         conn.commit()
@@ -62,6 +63,84 @@ def insert_game(game_data: dict):
 
     except Exception as e:
         print(f"Error (insert_game): {e}")
+        return f"Error: {e}"
+    finally:
+        if conn:
+            conn.close()
+
+# --- (Bulk Insert) - YENİ EKLENDİ ---
+def insert_games_bulk(games_list: list):
+    """
+    Birden fazla oyun kaydını tek sorguda veritabanına ekler (Performans için).
+    games_list: Dict listesi olmalıdır.
+    """
+    if not games_list:
+        return 0
+        
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+
+        query = f"""
+        INSERT INTO games ({SELECT_FIELDS})
+        VALUES ({PLACEHOLDERS})
+        """
+        
+        # Liste içindeki her dict'i tuple'a çeviriyoruz
+        values_list = []
+        for game in games_list:
+            values_list.append([game.get(col) for col in GAME_COLUMNS])
+
+        cursor.executemany(query, values_list)
+        rows_affected = cursor.rowcount
+
+        conn.commit()
+        cursor.close()
+        return rows_affected
+
+    except Exception as e:
+        print(f"Error (insert_games_bulk): {e}")
+        return 0
+    finally:
+        if conn:
+            conn.close()
+
+# --- (Update) ---
+def update_game(game_id, update_data: dict):
+    """Belirtilen game_id'ye ait oyunun verilerini günceller."""
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+
+        set_clauses = []
+        update_values = []
+
+        # game_id güncelleme verisi içindeyse onu çıkar (where koşulunda zaten var)
+        if 'game_id' in update_data:
+            del update_data['game_id']
+
+        # Sadece geçerli kolonları güncelle
+        for col, value in update_data.items():
+            if col in GAME_COLUMNS:
+                set_clauses.append(f"{col} = %s")
+                update_values.append(value)
+        
+        if not set_clauses:
+            return 0
+
+        query = f"UPDATE games SET {', '.join(set_clauses)} WHERE game_id = %s"
+        update_values.append(game_id)
+
+        cursor.execute(query, tuple(update_values))
+
+        rows_affected = cursor.rowcount
+
+        conn.commit()
+        cursor.close()
+        return rows_affected
+
+    except Exception as e:
+        print(f"Error (update_game): {e}")
         return f"Error: {e}"
     finally:
         if conn:
@@ -90,47 +169,9 @@ def delete_game(game_id):
         if conn:
             conn.close()
 
-# --- (Update) ---
-def update_game(game_id, update_data: dict):
-    """Belirtilen game_id'ye ait oyunun verilerini günceller."""
-    conn = db.get_connection()
-    try:
-        cursor = conn.cursor()
-
-        set_clauses = []
-        update_values = []
-
-        if 'game_id' in update_data:
-            del update_data['game_id']
-
-        for col, value in update_data.items():
-            if col in GAME_COLUMNS:
-                set_clauses.append(f"{col} = %s")
-                update_values.append(value)
-        
-        if not set_clauses:
-            return 0
-
-        query = f"UPDATE games SET {', '.join(set_clauses)} WHERE game_id = %s"
-        update_values.append(game_id)
-
-        cursor.execute(query, tuple(update_values))
-
-        rows_affected = cursor.rowcount
-
-        conn.commit()
-        cursor.close()
-        return rows_affected
-
-    except Exception as e:
-        print(f"Error (update_game): {e}")
-        return f"Error: {e}"
-    finally:
-        if conn:
-            conn.close()
-
 
 # --- (Query/Search) ---
+
 def search_games_by_club(club_id):
     """Belirtilen kulübün (ev sahibi veya deplasman) oynadığı tüm maçları getirir."""
     conn = db.get_connection()
@@ -159,6 +200,70 @@ def search_games_by_club(club_id):
         if conn:
             conn.close()
 
+# --- (Competition Search) - YENİ EKLENDİ ---
+def get_games_by_competition(competition_id, season=None):
+    """
+    Belirtilen lig (competition_id) ve opsiyonel olarak sezon için maçları getirir.
+    Örn: get_games_by_competition('GB1', 2023) -> Premier League 2023 maçları
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        
+        query = f"SELECT {SELECT_FIELDS} FROM games WHERE competition_id = %s"
+        params = [competition_id]
+        
+        if season:
+            query += " AND season = %s"
+            params.append(season)
+            
+        query += " ORDER BY date ASC, round ASC"
+
+        cursor.execute(query, tuple(params))
+        results = cursor.fetchall()
+        cursor.close()
+
+        for row in results:
+            results_list.append(Games(**row))
+
+        return results_list
+
+    except Exception as e:
+        print(f"Error (get_games_by_competition): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+
+# --- (Date Range Search) - YENİ EKLENDİ ---
+def get_games_by_date_range(start_date, end_date):
+    """İki tarih arasındaki maçları getirir (start_date ve end_date string olabilir: '2023-01-01')."""
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM games 
+        WHERE date BETWEEN %s AND %s
+        ORDER BY date ASC
+        """
+        cursor.execute(query, (start_date, end_date))
+        results = cursor.fetchall()
+        cursor.close()
+
+        for row in results:
+            results_list.append(Games(**row))
+
+        return results_list
+
+    except Exception as e:
+        print(f"Error (get_games_by_date_range): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+
+
 # --- (List All with Pagination) ---
 def get_total_game_count(search_term=""):
     """Filtrelenmiş veya tüm oyunların toplam sayısını döndürür."""
@@ -180,7 +285,13 @@ def get_total_game_count(search_term=""):
         cursor.execute(query, tuple(query_params))
         result = cursor.fetchone()
         
-        return result[0] if isinstance(result, tuple) else (result['COUNT(*)'] if result else 0)
+        # Count(*) sonucu tuple (X,) veya dict {'COUNT(*)': X} dönebilir, kontrol edelim
+        if isinstance(result, tuple):
+            return result[0]
+        elif isinstance(result, dict):
+            # DictCursor kullanılıyorsa anahtar bazen COUNT(*) bazen lower case olabilir, value'yu alırız
+            return list(result.values())[0] if result else 0
+        return 0
         
     except Exception as e:
         print(f"Error (get_total_game_count): {e}")
@@ -189,7 +300,7 @@ def get_total_game_count(search_term=""):
         if conn: conn.close()
 
 
-def get_all_games(page=1, per_page=50, search_term="", sort_by="game_id", sort_order="ASC"): # <-- DEĞİŞTİ
+def get_all_games(page=1, per_page=50, search_term="", sort_by="game_id", sort_order="ASC"):
     """Oyunları sayfalama, arama ve sıralama terimlerine göre listeler."""
     conn = db.get_connection()
     results_list = []
@@ -207,9 +318,9 @@ def get_all_games(page=1, per_page=50, search_term="", sort_by="game_id", sort_o
         query_params = [search_like] * len(search_cols)
         
     # Sıralama parametrelerini güvenli hale getir
-    safe_sort_order = sort_order.upper() if sort_order.upper() in ["ASC", "DESC"] else "ASC" # <-- DEĞİŞTİ
+    safe_sort_order = sort_order.upper() if sort_order.upper() in ["ASC", "DESC"] else "ASC"
     if sort_by not in GAME_COLUMNS:
-        sort_by = "game_id" # <-- DEĞİŞTİ
+        sort_by = "game_id"
 
     # LIMIT ve OFFSET parametrelerini en sona ekle
     query_params.extend([per_page, offset])

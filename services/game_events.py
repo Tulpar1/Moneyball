@@ -51,7 +51,8 @@ def insert_event(event_data: dict):
 
         cursor.execute(query, tuple(insert_values))
 
-        new_id = event_data.get('game_id', cursor.lastrowid) 
+        # Eğer tabloda auto-increment bir ID varsa onu döndürür
+        new_id = cursor.lastrowid 
 
         conn.commit()
         cursor.close()
@@ -60,6 +61,79 @@ def insert_event(event_data: dict):
     except Exception as e:
         print(f"Error (insert_event): {e}")
         return f"Error: {e}"
+    finally:
+        if conn:
+            conn.close()
+
+# --- (Bulk Insert) - PERFORMANS İÇİN EKLENDİ ---
+def insert_events_bulk(events_list: list):
+    """
+    Birden fazla olayı tek seferde veritabanına yazar.
+    API'den çekilen maç verilerini kaydederken çok hız kazandırır.
+    """
+    if not events_list:
+        return 0
+
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+        query = f"INSERT INTO game_events ({SELECT_FIELDS}) VALUES ({PLACEHOLDERS})"
+        
+        # List of lists hazırlama
+        values_list = []
+        for event in events_list:
+             values_list.append([event.get(col) for col in EVENT_COLUMNS])
+        
+        cursor.executemany(query, values_list)
+        rows_affected = cursor.rowcount
+
+        conn.commit()
+        cursor.close()
+        return rows_affected 
+    except Exception as e:
+        print(f"Error (insert_events_bulk): {e}")
+        return 0
+    finally:
+        if conn:
+            conn.close()
+
+# --- (Update) - EKSİKTİ, EKLENDİ ---
+def update_event(game_id, minute, event_type, changes: dict):
+    """
+    Belirtilen olayın (game_id, minute, type) sadece 'changes' sözlüğünde verilen alanlarını günceller.
+    """
+    if not changes:
+        return False
+
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+
+        # Güvenlik: Sadece geçerli kolonların güncellenmesine izin ver
+        valid_keys = [k for k in changes.keys() if k in EVENT_COLUMNS]
+        if not valid_keys:
+            return False
+
+        # Dinamik SQL oluşturma: "SET description = %s, player_id = %s"
+        set_clause = ", ".join([f"{key} = %s" for key in valid_keys])
+        values = [changes[key] for key in valid_keys]
+        
+        # WHERE koşulu parametreleri
+        values.extend([game_id, minute, event_type])
+
+        query = f"UPDATE game_events SET {set_clause} WHERE game_id = %s AND minute = %s AND type = %s"
+        
+        cursor.execute(query, tuple(values))
+        rows_affected = cursor.rowcount
+        
+        conn.commit()
+        cursor.close()
+        
+        return rows_affected > 0
+
+    except Exception as e:
+        print(f"Error (update_event): {e}")
+        return False
     finally:
         if conn:
             conn.close()
@@ -105,7 +179,6 @@ def search_events_by_game(game_id):
         cursor.close()
 
         for row in results:
-            # DictCursor uyumu için **row kullanıldı
             results_list.append(GameEvents(**row))
 
         return results_list
@@ -138,7 +211,12 @@ def get_total_event_count(search_term=""):
         cursor.execute(query, tuple(query_params))
         result = cursor.fetchone()
         
-        return result[0] if isinstance(result, tuple) else (result['COUNT(*)'] if result else 0)
+        # Sonucun tuple mı dict mi olduğunu kontrol et
+        if isinstance(result, tuple):
+            return result[0]
+        elif isinstance(result, dict):
+             return list(result.values())[0] if result else 0
+        return 0
         
     except Exception as e:
         print(f"Error (get_total_event_count): {e}")
@@ -147,7 +225,7 @@ def get_total_event_count(search_term=""):
         if conn: conn.close()
 
 
-def get_all_events(page=1, per_page=50, search_term="", sort_by="game_id", sort_order="ASC"): # <-- DEĞİŞTİ
+def get_all_events(page=1, per_page=50, search_term="", sort_by="game_id", sort_order="ASC"):
     """Oyun olaylarını sayfalama, arama ve sıralama terimlerine göre listeler."""
     conn = db.get_connection()
     results_list = []
@@ -165,9 +243,9 @@ def get_all_events(page=1, per_page=50, search_term="", sort_by="game_id", sort_
         query_params = [search_like] * len(search_cols)
 
     # Sıralama parametrelerini güvenli hale getir
-    safe_sort_order = sort_order.upper() if sort_order.upper() in ["ASC", "DESC"] else "ASC" # <-- DEĞİŞTİ
+    safe_sort_order = sort_order.upper() if sort_order.upper() in ["ASC", "DESC"] else "ASC"
     if sort_by not in EVENT_COLUMNS:
-        sort_by = "game_id" # <-- DEĞİŞTİ
+        sort_by = "game_id"
     
     # LIMIT ve OFFSET parametrelerini en sona ekle
     query_params.extend([per_page, offset])
