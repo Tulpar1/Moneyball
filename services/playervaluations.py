@@ -257,3 +257,35 @@ def get_all_valuations(page=1, per_page=50, search_term="", sort_by="date", sort
         return []
     finally:
         if conn: conn.close()
+
+        # Dosya: services/playervaluations.py içine ekle
+
+def get_player_peak_value(player_id):
+    """
+    Bir oyuncunun kariyeri boyunca gördüğü en yüksek piyasa değerini
+    ve o değerin tarihini getirir.
+    """
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+        # ORDER BY ve LIMIT kullanarak en yüksek değeri çekiyoruz. MAX() yerine bu daha detaylı bilgi verir.
+        query = """
+            SELECT date, market_value_in_eur 
+            FROM player_valuations 
+            WHERE player_id = %s 
+            ORDER BY market_value_in_eur DESC 
+            LIMIT 1
+        """
+        cursor.execute(query, (player_id,))
+        result = cursor.fetchone()
+        
+        if result:
+            return {"peak_date": result[0], "peak_value": result[1]}
+        return None
+
+    except Exception as e:
+        print(f"Error (get_player_peak_value): {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
