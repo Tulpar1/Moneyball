@@ -244,3 +244,29 @@ def get_all_competitions(page=1, per_page=50, search_term="", sort_by="competiti
         return []
     finally:
         if conn: conn.close()
+
+# Dosya: services/competitions.py içine ekle
+
+def get_competitions_by_type(comp_type):
+    """
+    Belirli bir türdeki (örn: domestic_league) ligleri getirir.
+    SQL Injection korumalıdır.
+    """
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+        # Schema.sql'de sütun adı 'sub_type' veya 'type' olarak geçiyor, kontrol ettim: 'type' var.
+        query = "SELECT * FROM competitions WHERE type = %s"
+        cursor.execute(query, (comp_type,))
+        results = cursor.fetchall()
+        
+        # Sonuçları nesneye çevirip listeye atıyoruz
+        competitions_list = [Competitions(*row) for row in results]
+        return competitions_list
+
+    except Exception as e:
+        print(f"Error (get_competitions_by_type): {e}")
+        return []
+    finally:
+        if conn:
+            conn.close()
