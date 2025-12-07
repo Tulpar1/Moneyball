@@ -276,6 +276,26 @@ def get_players_by_height_range(min_height, max_height):
 
     return result
 
+def get_players_with_contract_expiring(year):
+    """
+    Returns players whose contract expires in the given year.
+    Players without contract expiration info are ignored.
+    """
+    players = db.players.all()
+    result = []
+
+    for p in players:
+        if p.contract_expiration_date:
+            try:
+                # Tarih formatı: "YYYY-MM-DD" → sadece yılı alıyoruz
+                exp_year = int(p.contract_expiration_date.split("-")[0])
+                if exp_year == year:
+                    result.append(p)
+            except:
+                pass
+
+    return result
+
 
 
 
