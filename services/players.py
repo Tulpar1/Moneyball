@@ -257,6 +257,25 @@ def get_players_by_foot(foot):
         if p.foot and p.foot.lower() == foot.lower()
     ]
 
+def get_players_by_height_range(min_height, max_height):
+    """
+    Returns players whose height is between min_height and max_height (inclusive).
+    Ignores players missing height data.
+    """
+    players = db.players.all()
+    result = []
+
+    for p in players:
+        try:
+            if p.height_in_cm:
+                h = int(p.height_in_cm)
+                if min_height <= h <= max_height:
+                    result.append(p)
+        except:
+            pass
+
+    return result
+
 
 
 
