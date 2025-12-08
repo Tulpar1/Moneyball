@@ -243,3 +243,46 @@ def get_all_clubs(page=1, per_page=50, search_term="", sort_by="club_id", sort_o
         return []
     finally:
         if conn: conn.close()
+# --- (Update) ---
+def update_club(club_id, update_data: dict):
+    """
+    Belirtilen club_id'ye ait kulübün verilerini dinamik olarak günceller.
+    Sadece geçerli kolonların güncellenmesine izin verir.
+    """
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+
+        set_clauses = []
+        update_values = []
+
+        # club_id anahtar kolon olduğu için güncelleme verisinden çıkarılır
+        if 'club_id' in update_data:
+            del update_data['club_id']
+
+        # Sadece CLUB_COLUMNS listesinde tanımlı olan kolonları güncelle
+        for col, value in update_data.items():
+            if col in CLUB_COLUMNS:
+                set_clauses.append(f"{col} = %s")
+                update_values.append(value)
+        
+        if not set_clauses:
+            return 0
+
+        # Dinamik SQL oluşturma
+        query = f"UPDATE clubs SET {', '.join(set_clauses)} WHERE club_id = %s"
+        update_values.append(club_id)
+
+        cursor.execute(query, tuple(update_values))
+        rows_affected = cursor.rowcount
+
+        conn.commit()
+        cursor.close()
+        return rows_affected
+
+    except Exception as e:
+        print(f"Error (update_club): {e}")
+        return f"Error: {e}"
+    finally:
+        if conn:
+            conn.close()
