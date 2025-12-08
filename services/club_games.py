@@ -245,3 +245,51 @@ def get_all_club_games(page=1, per_page=50, search_term="", sort_by="game_id", s
         return []
     finally:
         if conn: conn.close()
+# --- (Update) ---
+def update_club_game(game_id, club_id, update_data: dict):
+    """
+    Belirtilen maç (game_id) ve kulüp (club_id) çiftine ait kaydı günceller.
+    Bileşik anahtar yapısına uygun olarak tasarlanmıştır.
+    """
+    if not update_data:
+        return 0
+
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+
+        set_clauses = []
+        update_values = []
+
+        # game_id ve club_id anahtar oldukları için güncelleme verisinden çıkarılır
+        keys_to_remove = ['game_id', 'club_id']
+        for key in keys_to_remove:
+            if key in update_data:
+                del update_data[key]
+
+        # Geçerli kolon kontrolü
+        for col, value in update_data.items():
+            if col in CLUB_GAME_COLUMNS:
+                set_clauses.append(f"{col} = %s")
+                update_values.append(value)
+        
+        if not set_clauses:
+            return 0
+
+        # UPDATE sorgusu (WHERE kısmında her iki ID kontrol edilir)
+        query = f"UPDATE club_games SET {', '.join(set_clauses)} WHERE game_id = %s AND club_id = %s"
+        update_values.extend([game_id, club_id])
+
+        cursor.execute(query, tuple(update_values))
+        rows_affected = cursor.rowcount
+
+        conn.commit()
+        cursor.close()
+        return rows_affected
+
+    except Exception as e:
+        print(f"Error (update_club_game): {e}")
+        return f"Error: {e}"
+    finally:
+        if conn:
+            conn.close()
