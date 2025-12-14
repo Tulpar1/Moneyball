@@ -293,3 +293,132 @@ def update_club_game(game_id, club_id, update_data: dict):
     finally:
         if conn:
             conn.close()
+def get_games_by_manager(manager_name):
+    """
+    Verilen teknik direktör ismine (own_manager_name) sahip tüm maç kayıtlarını getirir.
+    Büyük/küçük harf duyarsız arama yapar.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        # LIKE operatörü ile esnek arama (örn: 'Guardiola' yazınca bulabilmesi için)
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        WHERE own_manager_name LIKE %s
+        ORDER BY game_id DESC
+        """
+        cursor.execute(query, (f"%{manager_name}%",))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(ClubGames(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_games_by_manager): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+def get_club_wins(club_id):
+    """
+    Belirtilen kulübün sadece kazandığı (is_win = 1) maçları getirir.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        WHERE club_id = %s AND is_win = 1
+        ORDER BY game_id DESC
+        """
+        cursor.execute(query, (club_id,))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(ClubGames(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_club_wins): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+def get_high_scoring_games(min_goals=3):
+    """
+    Takımın 'own_goals' değeri belirtilen sayıya eşit veya büyük olan maçları getirir.
+    Varsayılan olarak 3 ve üzeri gol atılan maçları filtreler.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        WHERE own_goals >= %s
+        ORDER BY own_goals DESC
+        """
+        cursor.execute(query, (min_goals,))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(ClubGames(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_high_scoring_games): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+def get_head_to_head(club_id_1, club_id_2):
+    """
+    Belirli bir kulübün (club_id_1) belirli bir rakibe (club_id_2) karşı oynadığı
+    tüm maçları getirir.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        WHERE club_id = %s AND opponent_id = %s
+        ORDER BY game_id DESC
+        """
+        cursor.execute(query, (club_id_1, club_id_2))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(ClubGames(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_head_to_head): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+def get_clean_sheets(club_id):
+    """
+    Belirtilen kulübün gol yemediği (opponent_goals = 0) maçları getirir.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        WHERE club_id = %s AND opponent_goals = 0
+        ORDER BY game_id DESC
+        """
+        cursor.execute(query, (club_id,))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(ClubGames(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_clean_sheets): {e}")
+        return []
+    finally:
+        if conn: conn.close()
