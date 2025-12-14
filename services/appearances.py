@@ -145,7 +145,111 @@ def get_total_appearance_count(search_term=""):
         return 0
     finally:
         if conn: conn.close()
+def bulk_insert_appearances(appearances_list: list[dict]):
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+        
+        query = f"INSERT INTO appearances ({SELECT_FIELDS}) VALUES ({PLACEHOLDERS})"
+        values_list = []
+        for data in appearances_list:
+            values_list.append(tuple(data.get(col) for col in APPEARANCE_COLUMNS))
 
+        cursor.executemany(query, values_list)
+        conn.commit()
+        
+        return cursor.rowcount 
+
+    except Exception as e:
+        print(f"Error (bulk_insert): {e}")
+        return 0
+    finally:
+        if conn: conn.close()      
+
+def get_appearances_by_date_range(start_date, end_date, player_id=None):
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        
+        query = f"SELECT {SELECT_FIELDS} FROM appearances WHERE date BETWEEN %s AND %s"
+        params = [start_date, end_date]
+
+        if player_id:
+            query += " AND player_id = %s"
+            params.append(player_id)
+            
+        query += " ORDER BY date DESC"
+
+        cursor.execute(query, tuple(params))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(Appearances(*row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (date_range): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+
+# ---(Analytics)---
+def get_player_season_stats(player_id, season_year=None):
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor(dictionary=True) 
+        query = """
+            SELECT 
+                COUNT(*) as total_matches,
+                SUM(minutes_played) as total_minutes,
+                SUM(assists) as total_assists,
+                SUM(yellow_cards) as total_yellow,
+                SUM(red_cards) as total_red,
+                AVG(minutes_played) as avg_minutes
+            FROM appearances 
+            WHERE player_id = %s
+        """
+        cursor.execute(query, (player_id,))
+        result = cursor.fetchone()
+        return result
+
+    except Exception as e:
+        print(f"Error (get_player_season_stats): {e}")
+        return None
+    finally:
+        if conn: conn.close()
+        
+# ---(Update)---
+def update_appearance(appearance_id, update_data: dict):
+    conn = db.get_connection()
+    try:
+        cursor = conn.cursor()
+        fields = []
+        values = []
+        
+        for key, value in update_data.items():
+            if key in APPEARANCE_COLUMNS and key != 'appearance_id': 
+                fields.append(f"{key} = %s")
+                values.append(value)
+        
+        if not fields:
+            return False 
+
+        values.append(appearance_id) 
+        
+        query = f"UPDATE appearances SET {', '.join(fields)} WHERE appearance_id = %s"
+        
+        cursor.execute(query, tuple(values))
+        conn.commit()
+        
+        return cursor.rowcount > 0
+
+    except Exception as e:
+        print(f"Error (update_appearance): {e}")
+        return False
+    finally:
+        if conn: conn.close()
 
 # --- Search and Pagination support for get_all_appearances ---
 def get_all_appearances(page=1, per_page=50, search_term=""):
