@@ -286,3 +286,111 @@ def update_club(club_id, update_data: dict):
     finally:
         if conn:
             conn.close()
+def get_most_valuable_clubs(limit=10):
+    """
+    Toplam piyasa değeri (total_market_value) en yüksek olan kulüpleri getirir.
+    Varsayılan olarak ilk 10 kulübü döner.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        ORDER BY total_market_value DESC
+        LIMIT %s
+        """
+        cursor.execute(query, (limit,))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(Clubs(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_most_valuable_clubs): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+def get_clubs_by_age_rank(order="ASC", limit=10):
+    """
+    Takımları yaş ortalamasına (average_age) göre sıralar.
+    order="ASC" -> En genç takımları getirir.
+    order="DESC" -> En yaşlı takımları getirir.
+    """
+    conn = db.get_connection()
+    results_list = []
+    
+    # Sıralama güvenliği
+    safe_order = "ASC" if order.upper() == "ASC" else "DESC"
+
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        WHERE average_age IS NOT NULL AND average_age > 0
+        ORDER BY average_age {safe_order}
+        LIMIT %s
+        """
+        cursor.execute(query, (limit,))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(Clubs(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_clubs_by_age_rank): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+def get_largest_stadiums(limit=10):
+    """
+    Stadyum kapasitesine (stadium_seats) göre en büyük stadyuma sahip kulüpleri getirir.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        ORDER BY stadium_seats DESC
+        LIMIT %s
+        """
+        cursor.execute(query, (limit,))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(Clubs(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_largest_stadiums): {e}")
+        return []
+    finally:
+        if conn: conn.close()
+def get_clubs_with_most_national_players(limit=10):
+    """
+    Kadrosunda en çok milli takım oyuncusu (national_team_players) bulunduran kulüpleri getirir.
+    """
+    conn = db.get_connection()
+    results_list = []
+    try:
+        cursor = conn.cursor()
+        query = f"""
+        SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+        ORDER BY national_team_players DESC
+        LIMIT %s
+        """
+        cursor.execute(query, (limit,))
+        results = cursor.fetchall()
+        
+        for row in results:
+            results_list.append(Clubs(**row))
+            
+        return results_list
+    except Exception as e:
+        print(f"Error (get_clubs_with_most_national_players): {e}")
+        return []
+    finally:
+        if conn: conn.close()
