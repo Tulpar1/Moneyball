@@ -311,6 +311,26 @@ from datetime import datetime
         except:
             return None
 
+def get_players_missing_data(column_name):
+    """
+    Returns players that have missing (None or empty) values
+    for the given column name.
+    Example: column_name = 'height_in_cm'
+    """
+    players = db.players.all()
+    result = []
+
+    for p in players:
+        try:
+            value = getattr(p, column_name)
+            if value is None or value == "":
+                result.append(p)
+        except AttributeError:
+            # Invalid column name
+            pass
+
+    return result
+
 
 
 
