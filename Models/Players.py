@@ -3,6 +3,9 @@
 # Description: Python class representation of the "Players" table for the Moneyball project.
 #              Each instance of this class represents a single player and their attributes.
 
+from datetime import datetime
+
+
 class Players:
     def __init__(self, player_id, first_name, last_name, name, last_season,
                  current_club_id, player_code, country_of_birth, city_of_birth,
@@ -39,3 +42,16 @@ class Players:
 
 def __repr__(self):
     return f"<Player {self.player_id} - {self.name}>"
+
+    def get_age(self):
+        """
+        Calculates and returns the player's age based on date_of_birth.
+        Returns None if date_of_birth is missing or invalid.
+        """
+        if not self.date_of_birth:
+            return None
+        try:
+            dob = datetime.strptime(self.date_of_birth, "%Y-%m-%d")
+            return (datetime.now() - dob).days // 365
+        except:
+            return None
