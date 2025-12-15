@@ -296,6 +296,22 @@ def get_players_with_contract_expiring(year):
 
     return result
 
+from datetime import datetime
+
+    def get_age(self):
+        """
+        Calculates and returns the player's age based on date_of_birth.
+        Returns None if date_of_birth is missing or invalid.
+        """
+        if not self.date_of_birth:
+            return None
+        try:
+            dob = datetime.strptime(self.date_of_birth, "%Y-%m-%d")
+            return (datetime.now() - dob).days // 365
+        except:
+            return None
+
+
 
 
 
