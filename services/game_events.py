@@ -1,5 +1,5 @@
 # File: services/game_events.py
-# Description: Service layer for GameEvents model using players.py structure.
+# Description: Service layer for GameEvents model.
 
 from Database import db
 from Models.GameEvents import GameEvents
@@ -13,11 +13,11 @@ PLACEHOLDERS = ', '.join(['%s'] * len(EVENT_COLUMNS))
 
 
 def get_event(game_id, minute, event_type):
-    """Tekil bir olay getirir (Primary key: game_id, minute, type)."""
+    """Tekil bir olay getirir."""
     conn = db.get_connection()
     try:
         cursor = conn.cursor()
-        query = f"SELECT {SELECT_FIELDS} FROM game_events WHERE game_id=%s AND minute=%s AND type=%s"
+        query = f"SELECT {SELECT_FIELDS} FROM game_events WHERE game_id=%s AND minute=%s AND `type`=%s"
         cursor.execute(query, (game_id, minute, event_type))
         result = cursor.fetchone()
         return GameEvents(**result) if result else None
@@ -76,7 +76,11 @@ def get_all_events(page=1, per_page=50, search_term="", sort_by="game_id", sort_
         query_params = [search_like] * len(search_cols)
 
     safe_sort_order = "DESC" if sort_order.upper() == "DESC" else "ASC"
-    if sort_by not in EVENT_COLUMNS: sort_by = "game_id"
+    
+    if sort_by == "type":
+        sort_by = "`type`"
+    elif sort_by not in EVENT_COLUMNS: 
+        sort_by = "game_id"
 
     query_params.extend([per_page, offset])
 
@@ -133,7 +137,7 @@ def update_event(game_id, minute, event_type, changes: dict):
         values = [changes[key] for key in valid_keys]
         values.extend([game_id, minute, event_type])
 
-        query = f"UPDATE game_events SET {set_clause} WHERE game_id=%s AND minute=%s AND type=%s"
+        query = f"UPDATE game_events SET {set_clause} WHERE game_id=%s AND minute=%s AND `type`=%s"
         cursor.execute(query, tuple(values))
         conn.commit()
         return cursor.rowcount > 0
@@ -145,104 +149,22 @@ def update_event(game_id, minute, event_type, changes: dict):
 
 
 def delete_event(game_id, minute, event_type):
-    """Olayı siler."""
+    """Olayı siler (Type backtick içinde)."""
     conn = db.get_connection()
     try:
         cursor = conn.cursor()
-        query = "DELETE FROM game_events WHERE game_id=%s AND minute=%s AND type=%s"
+        query = "DELETE FROM game_events WHERE game_id=%s AND minute=%s AND `type`=%s"
+        
         cursor.execute(query, (game_id, minute, event_type))
         conn.commit()
-        return cursor.rowcount > 0
+        
+        if cursor.rowcount == 0:
+            print(f"Uyarı: Silinecek kayıt bulunamadı (ID:{game_id}, Min:{minute}, Type:{event_type})")
+            return False
+            
+        return True
     except Exception as e:
-        print(f"Hata: {e}")
+        print(f"Hata (delete_event): {e}")
         return False
-    finally:
-        if conn: conn.close()
-
-
-# --- ÖZEL ANALİTİK FONKSİYONLAR (Players.py Mantığıyla) ---
-
-def get_events_by_player(player_id):
-    """
-    Belirli bir oyuncuya ait tüm olayları (Gol, Kart, Değişiklik) getirir.
-    (Players.py'deki get_players_by_position mantığına benzer)
-    """
-    conn = db.get_connection()
-    results_list = []
-    try:
-        cursor = conn.cursor()
-        # player_id veya player_in_id (oyuna giren) kontrol edilir
-        query = f"""
-            SELECT {SELECT_FIELDS} FROM game_events 
-            WHERE player_id = %s OR player_in_id = %s
-            ORDER BY game_id DESC, minute ASC
-        """
-        cursor.execute(query, (player_id, player_id))
-        for row in cursor.fetchall():
-            results_list.append(GameEvents(**row))
-        return results_list
-    except Exception as e:
-        print(f"Hata (get_events_by_player): {e}")
-        return []
-    finally:
-        if conn: conn.close()
-
-
-def get_goals_by_game(game_id):
-    """Bir maçtaki sadece 'Goals' türündeki olayları getirir."""
-    conn = db.get_connection()
-    results_list = []
-    try:
-        cursor = conn.cursor()
-        query = f"SELECT {SELECT_FIELDS} FROM game_events WHERE game_id = %s AND type = 'Goals' ORDER BY minute ASC"
-        cursor.execute(query, (game_id,))
-        for row in cursor.fetchall():
-            results_list.append(GameEvents(**row))
-        return results_list
-    except Exception as e:
-        print(f"Hata: {e}")
-        return []
-    finally:
-        if conn: conn.close()
-
-
-def get_cards_by_game(game_id):
-    """Bir maçtaki sadece 'Cards' türündeki olayları getirir."""
-    conn = db.get_connection()
-    results_list = []
-    try:
-        cursor = conn.cursor()
-        query = f"SELECT {SELECT_FIELDS} FROM game_events WHERE game_id = %s AND type = 'Cards' ORDER BY minute ASC"
-        cursor.execute(query, (game_id,))
-        for row in cursor.fetchall():
-            results_list.append(GameEvents(**row))
-        return results_list
-    except Exception as e:
-        print(f"Hata: {e}")
-        return []
-    finally:
-        if conn: conn.close()
-
-def get_events_in_minute_range(min_minute, max_minute):
-    """
-    Belirli bir dakika aralığında (Örn: 80-90 arası) gerçekleşen olayları getirir.
-    (Players.py'deki get_players_by_height_range mantığı)
-    """
-    conn = db.get_connection()
-    results_list = []
-    try:
-        cursor = conn.cursor()
-        query = f"""
-            SELECT {SELECT_FIELDS} FROM game_events 
-            WHERE minute BETWEEN %s AND %s
-            LIMIT 100
-        """
-        cursor.execute(query, (min_minute, max_minute))
-        for row in cursor.fetchall():
-            results_list.append(GameEvents(**row))
-        return results_list
-    except Exception as e:
-        print(f"Hata: {e}")
-        return []
     finally:
         if conn: conn.close()

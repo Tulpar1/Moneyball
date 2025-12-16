@@ -80,7 +80,6 @@ def show_table(table_name):
     data_objects = []
     total_count = 0
 
-    # Servis yönlendirmeleri
     if table_name == 'appearances':
         data_objects = appearance_service.get_all_appearances(page, per_page, search_term)
         total_count = appearance_service.get_total_appearance_count(search_term)
@@ -131,7 +130,6 @@ def add_record(table_name):
         form_data = request.form.to_dict()
         result = None
         
-        # INSERT İşlemleri
         if table_name == 'appearances':
             result = appearance_service.insert_appearance(form_data)
         elif table_name == 'players':
@@ -149,7 +147,6 @@ def add_record(table_name):
         elif table_name == 'clubs':
             result = clubs_service.insert_club(form_data)
         
-        # Hata kontrolü
         if result and "Error" in str(result):
             return f"Hata oluştu: {result}"
                 
@@ -160,20 +157,27 @@ def add_record(table_name):
                           title=schema['title'],
                           columns=schema['columns'])
 
-# --- ÖZEL DELETE ROUTE: Game Events ---
-# Game events 3'lü anahtar kullandığı için (game_id, minute, type) tek parametreli fonksiyon yetmez.
+# --- 1. ÖZEL DELETE ROUTE: Game Events (EKSİK OLAN KISIM BURASIYDI) ---
 @app.route('/table/game_events/delete/<game_id>/<int:minute>/<type>', methods=['POST'])
 def delete_game_event_record(game_id, minute, type):
-    # Tip güvenliği ve encoded stringler için type parametresini kontrol edebilirsiniz
     success = events_service.delete_event(game_id, minute, type)
-    
     if success:
         return redirect(url_for('show_table', table_name='game_events'))
     else:
         return f"Silme Başarısız! (Maç: {game_id}, Dk: {minute}, Tip: {type})"
 
-# --- GENEL DELETE ROUTE ---
-# Tekil ID'ye sahip tablolar (Players, Clubs, Appearances vb.) için
+# --- ÖZEL DELETE ROUTE: Club Games ---
+@app.route('/table/club_games/delete/<int:game_id>/<int:club_id>', methods=['POST'])
+def delete_club_game_record(game_id, club_id):
+    # Bu tabloda Composite Key var: game_id + club_id
+    success = clubgames_service.delete_club_game(game_id, club_id)
+    
+    if success:
+        return redirect(url_for('show_table', table_name='club_games'))
+    else:
+        return f"Silme Başarısız! (Maç ID: {game_id}, Kulüp ID: {club_id})"
+
+# --- 2. GENEL DELETE ROUTE: Diğer Tablolar ---
 @app.route('/table/<table_name>/delete/<id>', methods=['POST'])
 def delete_record(table_name, id):
     if table_name not in TABLE_SCHEMAS:
@@ -186,15 +190,11 @@ def delete_record(table_name, id):
     elif table_name == 'players':
         success = players_service.delete_player(id)
     elif table_name == 'clubs':
-        # Kulüp silme servisi varsa (Varsayımsal):
         # success = clubs_service.delete_club(id)
         pass 
     elif table_name == 'games':
-        # Maç silme servisi varsa:
         # success = games_service.delete_game(id)
         pass
-    
-    # Not: game_events buraya gelmemeli, yukarıdaki özel route'u kullanmalı.
 
     if success:
         return redirect(url_for('show_table', table_name=table_name))

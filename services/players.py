@@ -1,9 +1,8 @@
 # File: services/players.py
 # Author: Hasan Özgür Çağan
 # Description: Service layer for the Players model in the Moneyball project.
-#              Provides backend functions to retrieve and process player data
-#              using the database connection (db).
 
+from datetime import datetime
 from Database import db
 from Models.Players import Players
 
@@ -52,6 +51,8 @@ def get_total_player_count():
         query = "SELECT COUNT(*) FROM players"
         cursor.execute(query)
         result = cursor.fetchone()
+        # Not: result'ın dictionary veya tuple dönmesine göre burası değişebilir.
+        # Eğer dict cursor kullanıyorsanız bu kod doğrudur.
         return result['COUNT(*)'] if result else 0
     except Exception as e:
         print(f"Hata (get_total_player_count): {e}")
@@ -59,7 +60,7 @@ def get_total_player_count():
     finally:
         if conn: conn.close()
 
-# --- Search ve Pagination Desteği için get_all_players fonksiyonunu güncelle ---
+
 def get_all_players(page=1, per_page=50, search_term=""):
     conn = db.get_connection()
     results_list = []
@@ -69,23 +70,25 @@ def get_all_players(page=1, per_page=50, search_term=""):
     
     # Arama terimi için WHERE koşulu oluşturma
     where_clause = ""
-    query_params = [per_page, offset]
+    # Başlangıç parametreleri
+    query_params = [] 
     
     if search_term:
         search_like = f"%{search_term}%"
-        # Not: Arama yapılacak sütunları burada listelemelisin (name, position, country_of_birth gibi)
+        # Arama yapılacak sütunlar
         search_cols = ["name", "position", "country_of_birth", "player_code"]
         
         where_conditions = [f"{col} LIKE %s" for col in search_cols]
         where_clause = " WHERE " + " OR ".join(where_conditions)
         
-        # LIMIT ve OFFSET'ten önce arama parametrelerini eklemeliyiz
-        query_params = [search_like] * len(search_cols) + [per_page, offset]
+        # Parametreleri listeye ekle
+        query_params = [search_like] * len(search_cols)
 
+    # Limit ve Offset parametrelerini en sona ekle
+    query_params.extend([per_page, offset])
 
     try:
         cursor = conn.cursor()
-        
         
         query = f"""
             SELECT {SELECT_FIELDS} FROM players
@@ -94,7 +97,6 @@ def get_all_players(page=1, per_page=50, search_term=""):
             LIMIT %s OFFSET %s
         """
         
-        # LIMIT ve OFFSET parametreleri query_params'ın sonunda olmalı.
         cursor.execute(query, tuple(query_params))       
         results = cursor.fetchall()
         
@@ -126,23 +128,18 @@ def get_top_players(limit=10):
         reverse=True
     )[:limit]
 
+
 def get_players_by_position(position):
     """
     Return all players who play in a given position.
-    Example input: "Midfield", "Defender", "Attack", "Goalkeeper".
-    Matching is case-sensitive based on stored data.
     """
-    from Database import db
     players = db.players.all()
     return [p for p in players if p.position == position]
 
-from datetime import datetime
 
 def get_players_older_than(age):
     """
     Returns all players older than the given age.
-    Uses the player's date_of_birth field to calculate age.
-    Players without valid date_of_birth are ignored.
     """
     players = db.players.all()
     result = []
@@ -156,15 +153,14 @@ def get_players_older_than(age):
                 if player_age > age:
                     result.append(p)
             except:
-                # Skip invalid dates
                 pass
 
     return result
 
+
 def get_players_younger_than(age):
     """
     Returns all players younger than the given age.
-    Players without valid or parsable date_of_birth are skipped.
     """
     players = db.players.all()
     result = []
@@ -180,12 +176,11 @@ def get_players_younger_than(age):
                 pass
     return result
 
+
 def get_undervalued_players(threshold_ratio=0.5):
     """
     Returns players whose current market value is significantly lower
     than their historical highest market value.
-    Example: threshold_ratio=0.5 means current value < 50% of peak value.
-    Players missing value data are ignored.
     """
     players = db.players.all()
     result = []
@@ -204,10 +199,10 @@ def get_undervalued_players(threshold_ratio=0.5):
 
     return result
 
+
 def get_players_by_country(country):
     """
     Return all players whose citizenship matches the given country.
-    Case-insensitive comparison.
     """
     players = db.players.all()
     return [
@@ -216,12 +211,11 @@ def get_players_by_country(country):
         and p.country_of_citizenship.lower() == country.lower()
     ]
 
-def insert_player(player_data: dict):
 
+def insert_player(player_data: dict):
     conn = db.get_connection()
     try:
         cursor = conn.cursor()
-
 
         query = f"""
         INSERT INTO players ({SELECT_FIELDS})
@@ -245,11 +239,10 @@ def insert_player(player_data: dict):
         if conn:
             conn.close()
 
+
 def get_players_by_foot(foot):
     """
     Return players whose dominant foot matches the given value.
-    Example inputs: 'right', 'left', 'both'
-    Case-insensitive comparison.
     """
     players = db.players.all()
     return [
@@ -257,10 +250,10 @@ def get_players_by_foot(foot):
         if p.foot and p.foot.lower() == foot.lower()
     ]
 
+
 def get_players_by_height_range(min_height, max_height):
     """
-    Returns players whose height is between min_height and max_height (inclusive).
-    Ignores players missing height data.
+    Returns players whose height is between min_height and max_height.
     """
     players = db.players.all()
     result = []
@@ -276,10 +269,10 @@ def get_players_by_height_range(min_height, max_height):
 
     return result
 
+
 def get_players_with_contract_expiring(year):
     """
     Returns players whose contract expires in the given year.
-    Players without contract expiration info are ignored.
     """
     players = db.players.all()
     result = []
@@ -287,7 +280,7 @@ def get_players_with_contract_expiring(year):
     for p in players:
         if p.contract_expiration_date:
             try:
-                # Tarih formatı: "YYYY-MM-DD" → sadece yılı alıyoruz
+                # Tarih formatı: "YYYY-MM-DD" -> sadece yılı alıyoruz
                 exp_year = int(p.contract_expiration_date.split("-")[0])
                 if exp_year == year:
                     result.append(p)
@@ -296,26 +289,26 @@ def get_players_with_contract_expiring(year):
 
     return result
 
-from datetime import datetime
 
-    def get_age(self):
-        """
-        Calculates and returns the player's age based on date_of_birth.
-        Returns None if date_of_birth is missing or invalid.
-        """
-        if not self.date_of_birth:
-            return None
-        try:
-            dob = datetime.strptime(self.date_of_birth, "%Y-%m-%d")
-            return (datetime.now() - dob).days // 365
-        except:
-            return None
+def get_player_age(player_obj):
+    """
+    Calculates and returns the player's age based on date_of_birth.
+    Returns None if date_of_birth is missing or invalid.
+    Note: 'self' was removed as this is a standalone function, not a class method.
+    """
+    if not player_obj.date_of_birth:
+        return None
+    try:
+        dob = datetime.strptime(player_obj.date_of_birth, "%Y-%m-%d")
+        return (datetime.now() - dob).days // 365
+    except:
+        return None
+
 
 def get_players_missing_data(column_name):
     """
     Returns players that have missing (None or empty) values
     for the given column name.
-    Example: column_name = 'height_in_cm'
     """
     players = db.players.all()
     result = []
@@ -326,12 +319,6 @@ def get_players_missing_data(column_name):
             if value is None or value == "":
                 result.append(p)
         except AttributeError:
-            # Invalid column name
             pass
 
     return result
-
-
-
-
-
