@@ -4,11 +4,11 @@
 --              Defines all relational attributes used by the Flask backend model.
 --              Each column corresponds directly to attributes in the Players Python class.
 
-------------------------------------------------------------
+
 -- TABLE: Players
 -- Purpose: Store all player-related data, including personal
 --          information, career stats, and market values.
-------------------------------------------------------------
+
 
 CREATE TABLE Players (
     player_id INTEGER PRIMARY KEY,                    -- Unique identifier for each player

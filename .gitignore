@@ -29,3 +29,6 @@ Thumbs.db
 # --- HASSAS BİLGİLER ---
 # Eğer settings.py içinde şifrelerin varsa yorum satırını kaldır:
 # settings.py
+venv/
+__pycache__/
+*.DS_Store

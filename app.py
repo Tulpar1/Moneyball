@@ -5,7 +5,7 @@ from services import games as games_service
 from services import game_events as events_service
 from services import competitions as competitions_service
 from services import playervaluations as playervaluations_service
-from services import club_games as clubgames_service
+from services import club_games as club_games_service
 from services import clubs as clubs_service
 
 app = Flask(__name__) 
@@ -99,8 +99,8 @@ def show_table(table_name):
         data_objects = playervaluations_service.get_all_valuations(page, per_page, search_term)
         total_count = playervaluations_service.get_total_valuation_count(search_term)
     elif table_name == 'club_games':
-        data_objects = clubgames_service.get_all_club_games(page, per_page, search_term)
-        total_count = clubgames_service.get_total_club_game_count(search_term)
+        data_objects = club_games_service.get_all_club_games(page, per_page, search_term)
+        total_count = club_games_service.get_total_club_game_count(search_term)
     elif table_name == 'clubs':
         data_objects = clubs_service.get_all_clubs(page, per_page, search_term)
         total_count = clubs_service.get_total_club_count(search_term)
@@ -167,16 +167,87 @@ def delete_game_event_record(game_id, minute, type):
         return f"Silme Başarısız! (Maç: {game_id}, Dk: {minute}, Tip: {type})"
 
 # --- ÖZEL DELETE ROUTE: Club Games ---
-@app.route('/table/club_games/delete/<int:game_id>/<int:club_id>', methods=['POST'])
-def delete_club_game_record(game_id, club_id):
-    # Bu tabloda Composite Key var: game_id + club_id
-    success = clubgames_service.delete_club_game(game_id, club_id)
-    
-    if success:
-        return redirect(url_for('show_table', table_name='club_games'))
-    else:
-        return f"Silme Başarısız! (Maç ID: {game_id}, Kulüp ID: {club_id})"
 
+@app.route('/table/club_games/delete/<int:game_id>', methods=['GET', 'POST'])
+def delete_club_game_route(game_id):
+    # İmza: Doğru fonksiyonun çalıştığını terminalde görmek için
+    print(f"--- ÖZEL CLUB GAMES SİLME FONKSİYONU ÇALIŞTI (ID: {game_id}) ---")
+
+    try:
+        # Servisi çağır
+        result = club_games_service.delete_club_game(game_id)
+        
+        # Sonucu işle (Tuple dönüyorsa ayır, dönmüyorsa düz al)
+        if isinstance(result, tuple) and len(result) == 2:
+            success, message = result
+        else:
+            success = result
+            message = "İşlem tamamlandı."
+
+        if success:
+            return redirect(url_for('show_table', table_name='club_games'))
+        else:
+            # Hata varsa kırmızı kutu göster
+            return f"""
+            <div style="font-family: Arial; padding: 20px; border: 4px solid red; background-color: #fff0f0;">
+                <h2 style="color: red;">SİLME BAŞARISIZ (ÖZEL FONKSİYON)</h2>
+                <p><b>Hata Detayı:</b> {message}</p>
+                <br>
+                <a href="/table/club_games">Geri Dön</a>
+            </div>
+            """
+            
+    except Exception as e:
+        return f"PYTHON HATASI: {str(e)}"
+    try:
+        # Servisten yanıt almayı dene
+        result = club_games_service.delete_club_game(game_id)
+        
+        # Eğer servis iki değer döndürüyorsa (success, message)
+        if isinstance(result, tuple) and len(result) == 2:
+            success, message = result
+        else:
+            # Eğer eski servis kullanılıyorsa sadece True/False döner
+            success = result
+            message = "Servis sadece True/False döndürdü, detay yok."
+
+        if success:
+            return redirect(url_for('get_all_club_games_route'))
+        else:
+            # HATA VARSA BU KIRMIZI KUTUYU GÖSTER
+            return f"""
+            <div style="font-family: Arial; padding: 20px; border: 4px solid red; background-color: #fff0f0;">
+                <h1 style="color: red;">HATA YAKALANDI! (PORT 5001)</h1>
+                <h3>Silinememe Sebebi:</h3>
+                <p style="font-size: 18px; font-weight: bold;">{message}</p>
+                <br>
+                <hr>
+                <p><i>Hakkı Yusuf, bu hatayı kopyalayıp bana atarsan sorunu hemen çözerim.</i></p>
+                <a href="/table/club_games">Geri Dön</a>
+            </div>
+            """
+            
+    except Exception as e:
+        return f"PYTHON KOD HATASI: {str(e)}"
+    # İmza testi: Konsola yazdır
+    print(f"SİLME İSTEĞİ GELDİ - ID: {game_id}")
+
+    try:
+        success, message = club_games_service.delete_club_game(game_id)
+    except Exception as e:
+        return f"SERVİS HATASI: {str(e)}"
+
+    if success:
+        return redirect(url_for('get_all_club_games_route'))
+    else:
+        # Hata mesajına "HAKKI YUSUF TEST" yazdık.
+        # Eğer ekranda bunu görmezsen, yanlış dosyayı çalıştırıyorsun demektir.
+        return f"""
+        <div style="border: 5px solid red; padding: 20px; font-size: 20px;">
+            <h1>HAKKI YUSUF TEST - SİLME BAŞARISIZ</h1>
+            <p><b>Hata Detayı:</b> {message}</p>
+        </div>
+        """
 # --- 2. GENEL DELETE ROUTE: Diğer Tablolar ---
 @app.route('/table/<table_name>/delete/<id>', methods=['POST'])
 def delete_record(table_name, id):
@@ -202,4 +273,4 @@ def delete_record(table_name, id):
         return f"Silme işlemi başarısız (ID: {id})"
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)

@@ -200,3 +200,41 @@ tr:hover { background-color: #f9fafb; }
 .btn-danger:hover {
     background-color: #dc2626; 
 }
+/* --- Sadece Renk ve Arka Plan Eklentileri --- */
+
+/* 1. Yeşil Tema Değişkeni (Var olanı ezmek yerine buraya ekle) */
+:root {
+    --primary-color: #2ecc71 !important; /* Futbol Yeşili */
+}
+
+/* 2. Arka Plan Resim Ayarları (Body'nin yapısını bozmadan) */
+body {
+    /* Resmi sayfaya yayma ayarı */
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
+    transition: background-image 0.5s ease-in-out;
+}
+
+/* 3. Sayfaya Özel Arka Plan Sınıfları */
+/* NOT: static/images/ klasöründe resimlerin olduğundan emin ol */
+.bg-players {
+    background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/static/images/players_bg.jpg');
+}
+
+.bg-stadium {
+    background-image: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('/static/images/stadium_bg.jpg');
+}
+
+.bg-default {
+    background-image: linear-gradient(rgba(0,0,0,0.8), rgba(0,0,0,0.8)), url('/static/images/default_bg.jpg');
+}
+
+/* 4. Hover (Büyüme) Efektini Güçlendirme */
+/* Eğer senin kodunda .card sınıfı varsa, sadece hover durumunu güncelliyoruz */
+.card:hover, .table-container tr:hover {
+    transform: scale(1.08) !important; /* Daha belirgin büyüme */
+    z-index: 100;
+    box-shadow: 0 10px 20px rgba(46, 204, 113, 0.4) !important;
+    transition: transform 0.3s ease;
+}

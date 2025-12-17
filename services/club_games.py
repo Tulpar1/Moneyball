@@ -13,7 +13,7 @@ SEARCHABLE_CLUB_GAME_COLUMNS = ["own_manager_name", "opponent_manager_name", "op
 
 SELECT_FIELDS = ', '.join(CLUB_GAME_COLUMNS)
 PLACEHOLDERS = ', '.join(['%s'] * len(CLUB_GAME_COLUMNS))
-TABLE_NAME = "club_games" # Bağımsız club_games tablosu varsayımı
+TABLE_NAME = "club_games" 
 
 ## ClubGames Veritabanı İşlemleri
 # ----------------------------------------
@@ -37,8 +37,7 @@ def get_club_game(game_id, club_id):
         print(f"Error (get_club_game): {e}")
         return None
     finally:
-        if conn:
-            conn.close()
+        if conn: conn.close()
 
 # --- (Insert) ---
 def insert_club_game(club_game_data: dict):
@@ -66,35 +65,61 @@ def insert_club_game(club_game_data: dict):
         print(f"Error (insert_club_game): {e}")
         return f"Error: {e}"
     finally:
-        if conn:
-            conn.close()
+        if conn: conn.close()
 
 # --- (Delete) ---
-def delete_club_game(game_id, club_id):
-    """Belirtilen game_id ve club_id'ye sahip kaydı veritabanından siler."""
+
+def delete_club_game(game_id):
+    """
+    Belirtilen game_id'ye sahip kayıtları silmeye çalışır.
+    Eğer başka tablolarda (örn: game_events, appearances) bu maça ait veri varsa,
+    SQL'in vereceği hatayı yakalayıp kullanıcıya döndürür.
+    """
     conn = db.get_connection()
     try:
         cursor = conn.cursor()
 
-        query = f"DELETE FROM {TABLE_NAME} WHERE game_id = %s AND club_id = %s"
-        cursor.execute(query, (game_id, club_id))
+        # BURASI ÖNEMLİ:
+        # Eğer "game_events" veya "appearances" gibi tabloların varsa,
+        # önce onları silmen gerekir. Örnek olarak yorum satırına ekliyorum:
+        # cursor.execute("DELETE FROM game_events WHERE game_id = %s", (game_id,))
+        # cursor.execute("DELETE FROM appearances WHERE game_id = %s", (game_id,))
+        
+        # Asıl silme işlemi
+        query = f"DELETE FROM {TABLE_NAME} WHERE game_id = %s"
+        cursor.execute(query, (game_id,))
 
         rows_affected = cursor.rowcount
-
         conn.commit()
         cursor.close()
-        return rows_affected > 0
+
+        if rows_affected > 0:
+            return True, f"Maç başarıyla silindi. (Silinen kayıt: {rows_affected})"
+        else:
+            return False, "Silinecek kayıt bulunamadı (ID yanlış olabilir)."
 
     except Exception as e:
-        print(f"Error (delete_club_game): {e}")
-        return f"Error: {e}"
+        # Hatayı konsola yazdır
+        print(f"SQL Hatası: {e}")
+        
+        # Hatayı string'e çevir
+        error_msg = str(e)
+        
+        # Kullanıcı dostu ipuçları ekle
+        if "foreign key constraint fails" in error_msg.lower():
+            return False, f"BU MAÇ SİLİNEMİYOR ÇÜNKÜ BAĞLI VERİLER VAR.<br><br><b>Teknik Hata:</b> {error_msg}<br><br><b>Çözüm:</b> Bu maçı silmeden önce, bu maça ait golleri veya oyuncu istatistiklerini silmelisiniz."
+        
+        return False, f"Bir hata oluştu: {error_msg}"
     finally:
-        if conn:
-            conn.close()
-
+        if conn: conn.close()
 # --- (Update) ---
 def update_club_game(game_id, club_id, update_data: dict):
-    """Belirtilen game_id ve club_id'ye ait kaydı günceller."""
+    """
+    Belirtilen maç (game_id) ve kulüp (club_id) çiftine ait kaydı günceller.
+    """
+    if not update_data:
+        return 0
+
     conn = db.get_connection()
     try:
         cursor = conn.cursor()
@@ -102,9 +127,9 @@ def update_club_game(game_id, club_id, update_data: dict):
         set_clauses = []
         update_values = []
 
+        # Anahtar kolonları güncelleme verisinden çıkar
         if 'game_id' in update_data: del update_data['game_id']
         if 'club_id' in update_data: del update_data['club_id']
-
 
         for col, value in update_data.items():
             if col in CLUB_GAME_COLUMNS:
@@ -115,11 +140,9 @@ def update_club_game(game_id, club_id, update_data: dict):
             return 0
 
         query = f"UPDATE {TABLE_NAME} SET {', '.join(set_clauses)} WHERE game_id = %s AND club_id = %s"
-        
         update_values.extend([game_id, club_id])
 
         cursor.execute(query, tuple(update_values))
-
         rows_affected = cursor.rowcount
 
         conn.commit()
@@ -130,9 +153,7 @@ def update_club_game(game_id, club_id, update_data: dict):
         print(f"Error (update_club_game): {e}")
         return f"Error: {e}"
     finally:
-        if conn:
-            conn.close()
-
+        if conn: conn.close()
 
 # --- (Query/Search) ---
 def search_all_club_games_by_club(club_id):
@@ -160,8 +181,7 @@ def search_all_club_games_by_club(club_id):
         print(f"Error (search_all_club_games_by_club): {e}")
         return []
     finally:
-        if conn:
-            conn.close()
+        if conn: conn.close()
 
 # --- (List All with Pagination) ---
 def get_total_club_game_count(search_term=""):
@@ -192,9 +212,8 @@ def get_total_club_game_count(search_term=""):
     finally:
         if conn: conn.close()
 
-
 def get_all_club_games(page=1, per_page=50, search_term="", sort_by="game_id", sort_order="ASC"):
-    """ClubGames kayıtlarını sayfalama, arama ve sıralama terimlerine göre listeler."""
+    """ClubGames kayıtlarını sayfalama, arama ve sıralama parametrelerine göre listeler."""
     conn = db.get_connection()
     results_list = []
     
@@ -210,12 +229,10 @@ def get_all_club_games(page=1, per_page=50, search_term="", sort_by="game_id", s
         where_clause = " WHERE " + " OR ".join(where_conditions)
         query_params = [search_like] * len(search_cols)
         
-    # Sıralama parametrelerini güvenli hale getir
     safe_sort_order = sort_order.upper() if sort_order.upper() in ["ASC", "DESC"] else "ASC"
     if sort_by not in CLUB_GAME_COLUMNS:
         sort_by = "game_id"
 
-    # LIMIT ve OFFSET parametrelerini en sona ekle
     query_params.extend([per_page, offset])
 
     try:
@@ -245,64 +262,17 @@ def get_all_club_games(page=1, per_page=50, search_term="", sort_by="game_id", s
         return []
     finally:
         if conn: conn.close()
-# --- (Update) ---
-def update_club_game(game_id, club_id, update_data: dict):
-    """
-    Belirtilen maç (game_id) ve kulüp (club_id) çiftine ait kaydı günceller.
-    Bileşik anahtar yapısına uygun olarak tasarlanmıştır.
-    """
-    if not update_data:
-        return 0
 
-    conn = db.get_connection()
-    try:
-        cursor = conn.cursor()
+# --- ANALIZ FONKSIYONLARI ---
 
-        set_clauses = []
-        update_values = []
-
-        # game_id ve club_id anahtar oldukları için güncelleme verisinden çıkarılır
-        keys_to_remove = ['game_id', 'club_id']
-        for key in keys_to_remove:
-            if key in update_data:
-                del update_data[key]
-
-        # Geçerli kolon kontrolü
-        for col, value in update_data.items():
-            if col in CLUB_GAME_COLUMNS:
-                set_clauses.append(f"{col} = %s")
-                update_values.append(value)
-        
-        if not set_clauses:
-            return 0
-
-        # UPDATE sorgusu (WHERE kısmında her iki ID kontrol edilir)
-        query = f"UPDATE club_games SET {', '.join(set_clauses)} WHERE game_id = %s AND club_id = %s"
-        update_values.extend([game_id, club_id])
-
-        cursor.execute(query, tuple(update_values))
-        rows_affected = cursor.rowcount
-
-        conn.commit()
-        cursor.close()
-        return rows_affected
-
-    except Exception as e:
-        print(f"Error (update_club_game): {e}")
-        return f"Error: {e}"
-    finally:
-        if conn:
-            conn.close()
 def get_games_by_manager(manager_name):
     """
-    Verilen teknik direktör ismine (own_manager_name) sahip tüm maç kayıtlarını getirir.
-    Büyük/küçük harf duyarsız arama yapar.
+    Verilen teknik direktör ismine sahip maçları getirir.
     """
     conn = db.get_connection()
     results_list = []
     try:
         cursor = conn.cursor()
-        # LIKE operatörü ile esnek arama (örn: 'Guardiola' yazınca bulabilmesi için)
         query = f"""
         SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
         WHERE own_manager_name LIKE %s
@@ -320,9 +290,10 @@ def get_games_by_manager(manager_name):
         return []
     finally:
         if conn: conn.close()
+
 def get_club_wins(club_id):
     """
-    Belirtilen kulübün sadece kazandığı (is_win = 1) maçları getirir.
+    Belirtilen kulübün kazandığı maçları getirir.
     """
     conn = db.get_connection()
     results_list = []
@@ -345,10 +316,10 @@ def get_club_wins(club_id):
         return []
     finally:
         if conn: conn.close()
+
 def get_high_scoring_games(min_goals=3):
     """
-    Takımın 'own_goals' değeri belirtilen sayıya eşit veya büyük olan maçları getirir.
-    Varsayılan olarak 3 ve üzeri gol atılan maçları filtreler.
+    Belirli bir gol sayısının üzerindeki maçları getirir.
     """
     conn = db.get_connection()
     results_list = []
@@ -371,10 +342,10 @@ def get_high_scoring_games(min_goals=3):
         return []
     finally:
         if conn: conn.close()
+
 def get_head_to_head(club_id_1, club_id_2):
     """
-    Belirli bir kulübün (club_id_1) belirli bir rakibe (club_id_2) karşı oynadığı
-    tüm maçları getirir.
+    İki takım arasındaki maçları getirir.
     """
     conn = db.get_connection()
     results_list = []
@@ -397,9 +368,10 @@ def get_head_to_head(club_id_1, club_id_2):
         return []
     finally:
         if conn: conn.close()
+
 def get_clean_sheets(club_id):
     """
-    Belirtilen kulübün gol yemediği (opponent_goals = 0) maçları getirir.
+    Kulübün gol yemediği maçları getirir.
     """
     conn = db.get_connection()
     results_list = []

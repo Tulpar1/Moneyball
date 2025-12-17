@@ -70,28 +70,35 @@ def insert_club(club_data: dict):
             conn.close()
 
 # --- (Delete) ---
+
 def delete_club(club_id):
-    """Belirtilen club_id'ye sahip kulübü veritabanından siler."""
+    """
+    Belirtilen club_id'ye sahip kulübü siler.
+    DB tarafında 'ON DELETE CASCADE' ayarlı olduğu için,
+    bu kulübe ait maçlar ve olaylar MySQL tarafından otomatik silinir.
+    """
     conn = db.get_connection()
     try:
         cursor = conn.cursor()
 
+        # Artık sadece ana tabloyu silmek yeterli!
+        # MySQL geri kalanını (maçları, olayları) kendi halledecek.
         query = f"DELETE FROM {TABLE_NAME} WHERE club_id = %s"
         cursor.execute(query, (club_id,))
 
         rows_affected = cursor.rowcount
-
         conn.commit()
         cursor.close()
+        
         return rows_affected > 0
 
     except Exception as e:
         print(f"Error (delete_club): {e}")
-        return f"Error: {e}"
+        # Hata mesajını döndür
+        return f"Veritabanı Hatası: {str(e)}"
     finally:
         if conn:
             conn.close()
-
 # --- (Update) ---
 def update_club(club_id, update_data: dict):
     """Belirtilen club_id'ye ait kulüp verilerini günceller."""
