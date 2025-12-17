@@ -380,7 +380,7 @@ def login():
         password = request.form['password']
         
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
         cursor.close()
@@ -397,6 +397,32 @@ def login():
             flash('Hatalı kullanıcı adı veya şifre.', 'danger')
 
     return render_template('login.html')
+# --- KAYIT OLMA (REGISTER) ROTASI ---
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        # Şifreyi güvenlik için karmaşık hale getiriyoruz (Hash)
+        hashed_password = generate_password_hash(password)
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        try:
+            # Kullanıcıyı veritabanına ekle
+            cursor.execute('INSERT INTO users (username, password, role) VALUES (%s, %s, %s)', 
+                           (username, hashed_password, 'user'))
+            conn.commit()
+            flash('Kayıt başarılı! Şimdi giriş yapabilirsiniz.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            flash(f'Hata: Bu kullanıcı adı zaten alınmış olabilir.', 'danger')
+        finally:
+            conn.close()
+            
+    return render_template('register.html')
 
 # --- LOGOUT (ÇIKIŞ) ---
 @app.route('/logout')
