@@ -69,7 +69,7 @@
                 <a href="{{ url_for('index') }}" class="nav-brand">Moneyball DB</a>
             </div>
 
-            <div class="nav-links" style="display: flex; align-items: center;">
+   <div class="nav-links" style="display: flex; align-items: center;">
                 <a href="{{ url_for('index') }}">Home</a>
                 <a href="{{ url_for('show_table', table_name='players') }}">Players</a> 
                 <a href="{{ url_for('show_table', table_name='club_games') }}">Matches</a> 
@@ -77,12 +77,21 @@
                 {% if session.get('user_id') %}
                     
                     {% if session.get('role') == 'admin' %}
-                        <a href="{{ url_for('admin_panel') }}" style="color: #e74c3c !important; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 5px;">ADMIN PANEL</a>
+                        <a href="{{ url_for('admin_panel') }}" 
+                           style="color: #e74c3c !important; font-weight: bold; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 5px; margin-right: 10px;">
+                           ADMIN PANEL
+                        </a>
                     {% endif %}
                     
-                    <span style="color: #7f8c8d; margin-left: 15px; font-size: 0.9em;">
-                        <i class="fas fa-user"></i> {{ session.username }}
+                    <span style="color: #7f8c8d; margin-left: 10px; font-size: 0.9em;">
+                        <i class="fas fa-user"></i> {{ session.username }} 
+                        
+                        <span style="font-size: 0.8em; color: {{ '#e74c3c' if session.get('role') == 'admin' else '#2ecc71' }}; border: 1px solid {{ '#e74c3c' if session.get('role') == 'admin' else '#2ecc71' }}; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">
+                            {{ session.get('role')|upper }}
+                        </span>
+
                     </span>
+
                     <a href="{{ url_for('logout') }}" style="color: #e74c3c !important; margin-left: 10px; font-weight: bold;">Çıkış</a>
                 
                 {% else %}

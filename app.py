@@ -252,6 +252,7 @@ def add_record(table_name):
 
 # --- 1. ÖZEL DELETE ROUTE: Game Events (EKSİK OLAN KISIM BURASIYDI) ---
 @app.route('/table/game_events/delete/<game_id>/<int:minute>/<type>', methods=['POST'])
+@admin_required
 def delete_game_event_record(game_id, minute, type):
     success = events_service.delete_event(game_id, minute, type)
     if success:
@@ -262,6 +263,7 @@ def delete_game_event_record(game_id, minute, type):
 # --- ÖZEL DELETE ROUTE: Club Games ---
 
 @app.route('/table/club_games/delete/<int:game_id>', methods=['GET', 'POST'])
+@admin_required
 def delete_club_game_route(game_id):
     # İmza: Doğru fonksiyonun çalıştığını terminalde görmek için
     print(f"--- ÖZEL CLUB GAMES SİLME FONKSİYONU ÇALIŞTI (ID: {game_id}) ---")
@@ -432,16 +434,22 @@ def logout():
     return redirect(url_for('login'))
 
 # --- ADMIN PANELİ (Sadece Adminler) ---
+
 @app.route('/admin')
 @admin_required
 def admin_panel():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    
+    cursor = conn.cursor() 
+    
     cursor.execute("SELECT * FROM users ORDER BY id DESC")
     users = cursor.fetchall()
+    
     cursor.close()
     conn.close()
-    return render_template('admin.html', users=users)
+    
+    
+    return render_template('adminpanel.html', users=users)
 
 # --- KULLANICI EKLEME (Admin İşlemi) ---
 @app.route('/admin/add', methods=['POST'])
@@ -466,7 +474,7 @@ def admin_add_user():
         
     cursor.close()
     conn.close()
-    return redirect(url_for('admin_panel'))
+    return redirect(url_for('adminpanel'))
 
 # --- KULLANICI SİLME (Admin İşlemi) ---
 @app.route('/admin/delete/<int:user_id>')
