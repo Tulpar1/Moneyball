@@ -31,27 +31,42 @@ TABLE_SCHEMAS = {
         "icon": "fa-solid fa-person-running",
         "columns": ["appearance_id", "player_name", "player_id", "competition_id", "assists", "minutes_played"]
     },
-   "club_games": {
+    "club_games": {
         "title": "Club Matches",
         "icon": "fa-regular fa-calendar-check",
         
-        # 1. GÖSTERİLECEK SÜTUNLAR (ID'leri çıkardık, Name'leri ekledik)
+        # 1. TABLODA GÖRÜNECEK SÜTUNLAR (İsimler var, ID yok)
         "columns": [
             "game_id", 
-            "club_name",       # club_id yerine ismi
+            "club_name", 
             "hosting", 
             "own_goals", 
             "opponent_goals", 
             "is_win", 
-            "opponent_name",   # opponent_id yerine ismi
+            "opponent_name", 
             "own_manager_name"
         ],
         
+        # 2. FORMDA İSTENECEK SÜTUNLAR (Veritabanı için ID ŞART!)
+        "form_columns": [
+            "game_id", 
+            "club_id",
+            "hosting", 
+            "own_goals", 
+            "own_position",
+            "own_manager_name",
+            "opponent_id",
+            "opponent_goals", 
+            "opponent_position",
+            "opponent_manager_name",
+            "is_win"
+        ],
+
         "headers": {
             "game_id": "Game ID",
             "club_name": "Club",
             "hosting": "Side",
-            "own_goals": "Home Goals",   
+            "own_goals": "Home Goals",
             "opponent_goals": "Away Goals",
             "is_win": "Result",
             "opponent_name": "Opponent",
@@ -145,6 +160,53 @@ def add_record(table_name):
         return "Tablo bulunamadı", 404
 
     schema = TABLE_SCHEMAS[table_name]
+    
+    # --- DÜZELTME BURADA: Form için özel sütun listesi var mı? ---
+    # Varsa onu kullan (ID'li olanı), yoksa normal listeyi kullan.
+    # Bu satır olmazsa formda Club ID kutusu çıkmaz!
+    actual_columns = schema.get('form_columns', schema['columns'])
+    # -----------------------------------------------------------
+
+    if request.method == 'POST':
+        form_data = request.form.to_dict()
+        result = None
+        
+        try:
+            if table_name == 'appearances':
+                result = appearance_service.insert_appearance(form_data)
+            elif table_name == 'players':
+                result = players_service.insert_player(form_data)
+            elif table_name == 'games':
+                result = games_service.insert_game(form_data)
+            elif table_name == 'game_events':
+                result = events_service.insert_event(form_data)
+            elif table_name == 'competitions':
+                result = competitions_service.insert_competition(form_data)
+            elif table_name == 'playervaluations':
+                result = playervaluations_service.insert_valuation(form_data)
+            elif table_name == 'club_games':
+                # İsmi düzeltilmiş servis
+                result = club_games_service.insert_club_game(form_data)
+            elif table_name == 'clubs':
+                result = clubs_service.insert_club(form_data)
+            
+            # Sonuç kontrolü (Hata varsa ekrana bas)
+            if result and isinstance(result, str) and "Error" in result:
+                return f"Hata oluştu: {result}"
+                
+            return redirect(url_for('show_table', table_name=table_name))
+            
+        except Exception as e:
+            return f"Python İşlem Hatası: {str(e)}"
+
+    return render_template('form.html', 
+                          table_name=table_name, 
+                          title=schema['title'],
+                          columns=actual_columns) # <-- BURASI ÇOK ÖNEMLİ: schema['columns'] DEĞİL, actual_columns OLACAK
+    if table_name not in TABLE_SCHEMAS:
+        return "Tablo bulunamadı", 404
+
+    schema = TABLE_SCHEMAS[table_name]
 
     if request.method == 'POST':
         form_data = request.form.to_dict()
@@ -163,7 +225,7 @@ def add_record(table_name):
         elif table_name == 'playervaluations':
             result = playervaluations_service.insert_valuation(form_data)
         elif table_name == 'club_games':
-            result = clubgames_service.insert_club_game(form_data)
+            result = club_games_service.insert_club_game(form_data)
         elif table_name == 'clubs':
             result = clubs_service.insert_club(form_data)
         
