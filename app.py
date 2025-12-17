@@ -31,13 +31,32 @@ TABLE_SCHEMAS = {
         "icon": "fa-solid fa-person-running",
         "columns": ["appearance_id", "player_name", "player_id", "competition_id", "assists", "minutes_played"]
     },
-    "club_games": {
+   "club_games": {
         "title": "Club Matches",
         "icon": "fa-regular fa-calendar-check",
+        
+        # 1. GÖSTERİLECEK SÜTUNLAR (ID'leri çıkardık, Name'leri ekledik)
         "columns": [
-            "game_id", "club_id", "hosting", "own_goals", "opponent_goals", 
-            "is_win", "opponent_id", "own_manager_name"
-        ]
+            "game_id", 
+            "club_name",       # club_id yerine ismi
+            "hosting", 
+            "own_goals", 
+            "opponent_goals", 
+            "is_win", 
+            "opponent_name",   # opponent_id yerine ismi
+            "own_manager_name"
+        ],
+        
+        "headers": {
+            "game_id": "Game ID",
+            "club_name": "Club",
+            "hosting": "Side",
+            "own_goals": "Home Goals",   
+            "opponent_goals": "Away Goals",
+            "is_win": "Result",
+            "opponent_name": "Opponent",
+            "own_manager_name": "Manager"
+        }
     },
     "playervaluations": {
         "title": "Market Values",
@@ -117,7 +136,8 @@ def show_table(table_name):
                           total_pages=total_pages,
                           total_count=total_count,
                           per_page=per_page,
-                          search_term=search_term)
+                          search_term=search_term,
+                          table_schemas=TABLE_SCHEMAS)
 
 @app.route('/table/<table_name>/add', methods=['GET', 'POST'])
 def add_record(table_name):
@@ -261,8 +281,12 @@ def delete_record(table_name, id):
     elif table_name == 'players':
         success = players_service.delete_player(id)
     elif table_name == 'clubs':
-        # success = clubs_service.delete_club(id)
-        pass 
+            result = clubs_service.delete_club(id)
+            if result is True:
+                success = True
+            else:
+                print(f"Kulüp silme hatası: {result}")
+                success = False
     elif table_name == 'games':
         # success = games_service.delete_game(id)
         pass

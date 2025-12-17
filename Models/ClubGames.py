@@ -11,7 +11,9 @@ class ClubGames:
         opponent_position,
         opponent_manager_name,
         hosting,
-        is_win
+        is_win,
+        club_name=None,
+        opponent_name=None
     ):
         self.game_id = game_id
         self.club_id = club_id
@@ -24,3 +26,5 @@ class ClubGames:
         self.opponent_manager_name = opponent_manager_name
         self.hosting = hosting
         self.is_win = is_win
+        self.club_name = club_name
+        self.opponent_name = opponent_name

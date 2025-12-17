@@ -213,33 +213,55 @@ def get_total_club_game_count(search_term=""):
         if conn: conn.close()
 
 def get_all_club_games(page=1, per_page=50, search_term="", sort_by="game_id", sort_order="ASC"):
-    """ClubGames kayıtlarını sayfalama, arama ve sıralama parametrelerine göre listeler."""
+    """
+    ClubGames kayıtlarını listeler. 
+    YENİLİK: Artık 'clubs' tablosuna JOIN atarak Takım İsimlerini de getiriyor.
+    """
     conn = db.get_connection()
     results_list = []
     
     offset = (page - 1) * per_page
     
+    # Varsayılan sıralama sütunu kontrolü
+    if sort_by not in CLUB_GAME_COLUMNS and sort_by not in ['club_name', 'opponent_name']:
+        sort_by = "cg.game_id"
+    elif sort_by in CLUB_GAME_COLUMNS:
+        # Tablo alias'ı ekleyelim ki karışıklık olmasın (cg = club_games)
+        sort_by = f"cg.{sort_by}"
+
+    safe_sort_order = sort_order.upper() if sort_order.upper() in ["ASC", "DESC"] else "ASC"
+
+    # Arama Filtresi
     where_clause = ""
     query_params = []
-    
     if search_term:
         search_like = f"%{search_term}%"
-        search_cols = SEARCHABLE_CLUB_GAME_COLUMNS
-        where_conditions = [f"{col} LIKE %s" for col in search_cols]
-        where_clause = " WHERE " + " OR ".join(where_conditions)
-        query_params = [search_like] * len(search_cols)
-        
-    safe_sort_order = sort_order.upper() if sort_order.upper() in ["ASC", "DESC"] else "ASC"
-    if sort_by not in CLUB_GAME_COLUMNS:
-        sort_by = "game_id"
+        # Hem menajer isminde hem de TAKIM İSMİNDE arama yapabilsin
+        where_clause = """
+        WHERE (cg.own_manager_name LIKE %s 
+           OR cg.opponent_manager_name LIKE %s 
+           OR c1.name LIKE %s 
+           OR c2.name LIKE %s)
+        """
+        query_params = [search_like, search_like, search_like, search_like]
 
     query_params.extend([per_page, offset])
 
     try:
         cursor = conn.cursor()
         
+        # SQL JOIN SORGUSU
+        # c1: Kendi kulübümüz, c2: Rakip kulüp
         query = f"""
-            SELECT {SELECT_FIELDS} FROM {TABLE_NAME}
+            SELECT 
+                cg.game_id, cg.club_id, cg.own_goals, cg.own_position, cg.own_manager_name,
+                cg.opponent_id, cg.opponent_goals, cg.opponent_position, cg.opponent_manager_name,
+                cg.hosting, cg.is_win,
+                c1.name as club_name,       -- Kendi kulüp ismimiz
+                c2.name as opponent_name    -- Rakip kulüp ismi
+            FROM {TABLE_NAME} cg
+            LEFT JOIN clubs c1 ON cg.club_id = c1.club_id
+            LEFT JOIN clubs c2 ON cg.opponent_id = c2.club_id
             {where_clause}
             ORDER BY {sort_by} {safe_sort_order}
             LIMIT %s OFFSET %s
@@ -249,20 +271,22 @@ def get_all_club_games(page=1, per_page=50, search_term="", sort_by="game_id", s
         results = cursor.fetchall()
         
         for row in results:
-            try:
-                obj = ClubGames(**row) 
-                results_list.append(obj)
-            except TypeError as e:
-                print(f"Model conversion error (Row skipped): {e}") 
+            
+            if isinstance(row, dict):
+                obj = ClubGames(**row)
+            else:
+            
+                obj = ClubGames(*row) 
+                
+            results_list.append(obj)
 
         return results_list
 
     except Exception as e:
-        print(f"Error (get_all_club_games): {e}")
+        print(f"Error (get_all_club_games JOIN): {e}")
         return []
     finally:
         if conn: conn.close()
-
 # --- ANALIZ FONKSIYONLARI ---
 
 def get_games_by_manager(manager_name):

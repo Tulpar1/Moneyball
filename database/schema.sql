@@ -89,3 +89,49 @@ CREATE TABLE IF NOT EXISTS Appearances (
     -- FOREIGN KEY (player_id) REFERENCES Players(player_id),
     -- FOREIGN KEY (competition_id) REFERENCES Competitions(competition_id)
 );
+-- =========================================
+-- TABLE: Clubs
+-- =========================================
+CREATE TABLE IF NOT EXISTS Clubs (
+    club_id INTEGER PRIMARY KEY,
+    club_code VARCHAR(255),
+    name VARCHAR(255),
+    domestic_competition_id VARCHAR(16),
+    total_market_value BIGINT,
+    squad_size INTEGER,
+    average_age FLOAT,
+    foreigners_number INTEGER,
+    foreigners_percentage FLOAT,
+    national_team_players INTEGER,
+    stadium_name VARCHAR(255),
+    stadium_seats INTEGER,
+    net_transfer_record VARCHAR(255),
+    coach_name VARCHAR(255),
+    last_season INTEGER,
+    url TEXT
+);
+
+-- =========================================
+-- TABLE: ClubGames
+-- AMAC: Kulüplerin maç istatistiklerini tutar.
+-- CASCADE: Kulüp silinirse, ona ait maç kayıtları da silinir 
+-- =========================================
+CREATE TABLE IF NOT EXISTS ClubGames (
+    game_id INTEGER,
+    club_id INTEGER,
+    own_goals INTEGER,
+    own_position INTEGER,
+    own_manager_name VARCHAR(255),
+    opponent_id INTEGER,
+    opponent_goals INTEGER,
+    opponent_position INTEGER,
+    opponent_manager_name VARCHAR(255),
+    hosting VARCHAR(10),
+    is_win INTEGER,
+    
+    -- Bir maçta aynı kulüp sadece bir kez geçebilir
+    PRIMARY KEY (game_id, club_id),
+    
+    -- CASCADE BAĞLANTISI BURADA:
+    FOREIGN KEY (club_id) REFERENCES Clubs(club_id) ON DELETE CASCADE
+);

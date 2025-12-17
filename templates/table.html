@@ -33,7 +33,13 @@
         <thead>
             <tr>
                 {% for col in columns %}
-                <th>{{ col.replace('_', ' ').title() }}</th>
+                    <th>
+                        {% if table_schemas[table_name].headers and table_schemas[table_name].headers[col] %}
+                             {{ table_schemas[table_name].headers[col] }}
+                        {% else %}
+                             {{ col.replace('_', ' ').title() }}
+                        {% endif %}
+                    </th>
                 {% endfor %}
                 
                 <th style="width: 80px; text-align: center;">Actions</th>
