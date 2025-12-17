@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container" style="max-width: 400px; text-align: center; margin-top: 50px;">
+    <h2 style="color: #2ecc71;">Giriş Yap</h2>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div style="padding: 10px; margin-bottom: 10px; background: rgba(255,0,0,0.5); border-radius: 5px;">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <div style="margin: 15px 0;">
+            <input type="text" name="username" placeholder="Kullanıcı Adı" required class="form-control" style="width: 100%; padding: 10px; border-radius: 5px; border: none;">
+        </div>
+        <div style="margin: 15px 0;">
+            <input type="password" name="password" placeholder="Şifre" required class="form-control" style="width: 100%; padding: 10px; border-radius: 5px; border: none;">
+        </div>
+        <button type="submit" class="btn" style="width: 100%; font-size: 1.1em;">GİRİŞ</button>
+    </form>
+</div>
+{% endblock %}

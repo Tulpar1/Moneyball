@@ -22,3 +22,6 @@ class Database:
             print(f"Veritabanı bağlantı hatası: {e}")
             return None
 db = Database()
+
+def get_db_connection():
+    return db.get_connection()

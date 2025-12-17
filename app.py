@@ -7,9 +7,20 @@ from services import competitions as competitions_service
 from services import playervaluations as playervaluations_service
 from services import club_games as club_games_service
 from services import clubs as clubs_service
-
-app = Flask(__name__) 
-
+from flask import Flask, render_template, request, redirect, url_for, flash, session
+from werkzeug.security import generate_password_hash, check_password_hash # <--- BU ŞART
+from Database import get_db_connection
+import functools
+app = Flask(__name__)
+app.secret_key = 'cok_gizli_anahtar'  # Burayı istediğin gibi değiştirebilirsin
+def admin_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwargs):
+        if 'user_id' not in session or session.get('role') != 'admin':
+            flash('Bu sayfaya erişim yetkiniz yok!', 'danger')
+            return redirect(url_for('login'))
+        return view(**kwargs)
+    return wrapped_view
 TABLE_SCHEMAS = {
     "players": {
         "title": "Players",
@@ -357,6 +368,110 @@ def delete_record(table_name, id):
         return redirect(url_for('show_table', table_name=table_name))
     else:
         return f"Silme işlemi başarısız (ID: {id})"
+# ------------------------------------------------------------------
+# LOGIN ve ADMIN ROTALARI (Bunu dosyanın en altına yapıştır)
+# ------------------------------------------------------------------
+
+# --- LOGIN (GİRİŞ) ---
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+        user = cursor.fetchone()
+        cursor.close()
+        conn.close()
+
+        # Kullanıcı var mı ve şifre doğru mu?
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
+            session['role'] = user['role']
+            flash('Giriş başarılı!', 'success')
+            return redirect(url_for('index')) # Giriş yapınca ana sayfaya atar
+        else:
+            flash('Hatalı kullanıcı adı veya şifre.', 'danger')
+
+    return render_template('login.html')
+
+# --- LOGOUT (ÇIKIŞ) ---
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('Çıkış yapıldı.', 'info')
+    return redirect(url_for('login'))
+
+# --- ADMIN PANELİ (Sadece Adminler) ---
+@app.route('/admin')
+@admin_required
+def admin_panel():
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users ORDER BY id DESC")
+    users = cursor.fetchall()
+    cursor.close()
+    conn.close()
+    return render_template('admin.html', users=users)
+
+# --- KULLANICI EKLEME (Admin İşlemi) ---
+@app.route('/admin/add', methods=['POST'])
+@admin_required
+def admin_add_user():
+    username = request.form['username']
+    password = request.form['password']
+    role = request.form['role']
+    
+    # Şifreyi hashleyerek (gizleyerek) kaydediyoruz
+    hashed_pw = generate_password_hash(password)
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("INSERT INTO users (username, password, role) VALUES (%s, %s, %s)", 
+                       (username, hashed_pw, role))
+        conn.commit()
+        flash('Kullanıcı eklendi.', 'success')
+    except:
+        flash('Hata: Bu kullanıcı adı zaten var.', 'danger')
+        
+    cursor.close()
+    conn.close()
+    return redirect(url_for('admin_panel'))
+
+# --- KULLANICI SİLME (Admin İşlemi) ---
+@app.route('/admin/delete/<int:user_id>')
+@admin_required
+def admin_delete_user(user_id):
+    # Admin kendini silemesin
+    if user_id == session.get('user_id'):
+        flash('Kendinizi silemezsiniz!', 'danger')
+    else:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM users WHERE id = %s", (user_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        flash('Kullanıcı silindi.', 'success')
+    return redirect(url_for('admin_panel'))
+
+# --- İLK ADMİNİ OLUŞTURMA (Kurulum İçin Tek Seferlik) ---
+@app.route('/create_first_admin')
+def create_first_admin():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    # Şifre: 1234
+    pw = generate_password_hash('1234')
+    try:
+        cursor.execute("INSERT INTO users (username, password, role) VALUES ('admin', %s, 'admin')", (pw,))
+        conn.commit()
+        return "Admin oluşturuldu! (Kullanıcı: admin, Şifre: 1234)"
+    except:
+        return "Admin zaten mevcut."
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
