@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moneyball Project</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}?v=5">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        /* --- 1. ARKA PLAN RENGİ (BEMBEYAZ) --- */
+        body {
+            background-color: #ffffff !important; /* Arka plan kesinlikle BEYAZ */
+            background-image: none !important;    /* Eski arka plan resmini kaldır */
+            color: #333333; /* Genel yazı rengi koyu olsun ki okunsun */
+        }
+
+        /* --- 2. LOGO TASARIMI --- */
+        .nav-brand {
+            color: #2ecc71 !important; 
+            font-weight: 800;
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
+        
+        /* --- 3. LİNKLERİN RENGİ (Siyah/Koyu Gri) --- */
+        /* Arka plan beyaz olduğu için yazıları koyulaştırdık */
+        .nav-links a {
+            color: #2c3e50 !important; /* Koyu Lacivert/Gri */
+            text-decoration: none;
+            margin-left: 15px;
+            font-size: 1rem;
+            font-weight: 600; /* Biraz daha kalın olsun */
+            transition: color 0.3s ease;
+        }
+        
+        /* Üzerine gelince Yeşil olsun */
+        .nav-links a:hover {
+            color: #2ecc71 !important;
+        }
+
+        /* Navbar'ın altını belli etmek için ufak bir gölge */
+        .navbar {
+            background-color: #ffffff; /* Navbar da beyaz */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); /* Hafif gölge */
+            padding: 15px 0;
+        }
+
+        /* Giriş Yap Butonu */
+        .btn-login {
+            color: #2ecc71 !important;
+            border: 2px solid #2ecc71;
+            padding: 5px 15px;
+            border-radius: 20px;
+        }
+        .btn-login:hover {
+            background-color: #2ecc71;
+            color: white !important;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container-nav" style="display: flex; justify-content: space-between; align-items: center; max-width: 1200px; margin: 0 auto; padding: 0 20px;">
+            
+            <div class="logo">
+                <a href="{{ url_for('index') }}" class="nav-brand">Moneyball DB</a>
+            </div>
+
+   <div class="nav-links" style="display: flex; align-items: center;">
+                <a href="{{ url_for('index') }}">Home</a>
+                <a href="{{ url_for('show_table', table_name='players') }}">Players</a> 
+                <a href="{{ url_for('show_table', table_name='club_games') }}">Matches</a> 
+                
+                {% if session.get('user_id') %}
+                    
+                    {% if session.get('role') == 'admin' %}
+                        <a href="{{ url_for('admin_panel') }}" 
+                           style="color: #e74c3c !important; font-weight: bold; border: 1px solid #e74c3c; padding: 5px 10px; border-radius: 5px; margin-right: 10px;">
+                           ADMIN PANEL
+                        </a>
+                    {% endif %}
+                    
+                    <span style="color: #7f8c8d; margin-left: 10px; font-size: 0.9em;">
+                        <i class="fas fa-user"></i> {{ session.username }} 
+                        
+                        <span style="font-size: 0.8em; color: {{ '#e74c3c' if session.get('role') == 'admin' else '#2ecc71' }}; border: 1px solid {{ '#e74c3c' if session.get('role') == 'admin' else '#2ecc71' }}; padding: 2px 6px; border-radius: 4px; margin-left: 5px;">
+                            {{ session.get('role')|upper }}
+                        </span>
+
+                    </span>
+
+                    <a href="{{ url_for('logout') }}" style="color: #e74c3c !important; margin-left: 10px; font-weight: bold;">Çıkış</a>
+                
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn-login">Giriş Yap</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <div class="container" style="background: transparent; border: none; box-shadow: none; padding-bottom: 0;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert" style="padding: 15px; margin-bottom: 20px; border-radius: 5px; color: white; 
+                       background-color: {{ '#2ecc71' if category == 'success' else '#e74c3c' }};">
+                    {{ message }}
+                  </div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+        </div>
+
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='base.js') }}" defer></script>
+</body>
+</html>
