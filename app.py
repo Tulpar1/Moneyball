@@ -250,7 +250,8 @@ def add_record(table_name):
                           title=schema['title'],
                           columns=schema['columns'])
 
-# --- 1. ÖZEL DELETE ROUTE: Game Events (EKSİK OLAN KISIM BURASIYDI) ---
+# --- 1. ÖZELddsaddsa
+#  DELETE ROUTE: Game Events (EKSİK OLAN KISIM BURASIYDI) ---
 @app.route('/table/game_events/delete/<game_id>/<int:minute>/<type>', methods=['POST'])
 @admin_required
 def delete_game_event_record(game_id, minute, type):
