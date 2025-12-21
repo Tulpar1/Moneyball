@@ -28,11 +28,11 @@ class PlayerModel:
         if sort_by == 'age':
             order_direction = 'DESC' if sort_order == 'asc' else 'ASC'
 
-        # Temel sorgu: Clubs tablosu ile JOIN yapıldı
+        # Base query with NULL filters for critical fields
         base_query = """
             FROM players p 
             LEFT JOIN clubs c ON p.current_club_id = c.club_id 
-            WHERE 1=1
+            WHERE p.name IS NOT NULL AND p.name != ''
         """
         params = []
         

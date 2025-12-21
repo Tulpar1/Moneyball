@@ -27,8 +27,11 @@ class PlayerValuationModel:
         if max_value:
             where_clauses.append("pv.market_value_in_eur <= %s")
             params.append(max_value)
+        # Add base NULL filters for essential fields
+        where_clauses.append("p.name IS NOT NULL AND p.name != ''")
+        where_clauses.append("pv.market_value_in_eur IS NOT NULL AND pv.market_value_in_eur > 0")
             
-        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        where_str = " WHERE " + " AND ".join(where_clauses)
         
         allowed_columns = {"name": "p.name", "date": "pv.date", "value": "pv.market_value_in_eur"}
         order_col = allowed_columns.get(sort_by, "pv.date")
@@ -39,6 +42,11 @@ class PlayerValuationModel:
             query = f"""
                 SELECT pv.*, p.name as player_name, p.image_url as player_image, c.name as club_name
                 FROM player_valuations pv
+                INNER JOIN (
+                    SELECT player_id, MAX(date) as max_date
+                    FROM player_valuations
+                    GROUP BY player_id
+                ) latest ON pv.player_id = latest.player_id AND pv.date = latest.max_date
                 LEFT JOIN players p ON pv.player_id = p.player_id
                 LEFT JOIN clubs c ON pv.current_club_id = c.club_id
                 {where_str}
@@ -75,11 +83,26 @@ class PlayerValuationModel:
         if max_value:
             where_clauses.append("pv.market_value_in_eur <= %s")
             params.append(max_value)
+        # Add base NULL filters for essential fields
+        where_clauses.append("p.name IS NOT NULL AND p.name != ''")
+        where_clauses.append("pv.market_value_in_eur IS NOT NULL AND pv.market_value_in_eur > 0")
 
-        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        where_str = " WHERE " + " AND ".join(where_clauses)
         try:
             cursor = conn.cursor(dictionary=True)
-            query = f"SELECT COUNT(*) as total FROM player_valuations pv LEFT JOIN players p ON pv.player_id = p.player_id LEFT JOIN clubs c ON pv.current_club_id = c.club_id {where_str}"
+            # Her oyuncu için en güncel değerlemeyi saymak için subquery kullanıyoruz
+            query = f"""
+                SELECT COUNT(*) as total 
+                FROM player_valuations pv 
+                INNER JOIN (
+                    SELECT player_id, MAX(date) as max_date
+                    FROM player_valuations
+                    GROUP BY player_id
+                ) latest ON pv.player_id = latest.player_id AND pv.date = latest.max_date
+                LEFT JOIN players p ON pv.player_id = p.player_id 
+                LEFT JOIN clubs c ON pv.current_club_id = c.club_id 
+                {where_str}
+            """
             cursor.execute(query, tuple(params))
             res = cursor.fetchone()
             return res['total'] if res else 0

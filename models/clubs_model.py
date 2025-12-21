@@ -24,8 +24,10 @@ class ClubModel:
         if max_squad:
             where_clauses.append("c.squad_size <= %s")
             params.append(max_squad)
+        # Add base NULL filter for club name
+        where_clauses.append("c.name IS NOT NULL AND c.name != ''")
             
-        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        where_str = " WHERE " + " AND ".join(where_clauses)
         
         allowed_sorts = {'name': 'c.name', 'squad_size': 'c.squad_size', 'id': 'c.club_id'}
         sort_col = allowed_sorts.get(sort_by, 'c.name')

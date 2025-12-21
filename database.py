@@ -6,7 +6,7 @@ class Config:
     # Database Configuration
     DB_HOST = 'localhost'
     DB_USER = 'root'
-    DB_PASSWORD = 'MatFullucem0423'  
+    DB_PASSWORD = 'TulluPar1'  
     DB_NAME = 'moneyball'
     DB_PORT = 3306
 

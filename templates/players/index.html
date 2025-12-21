@@ -1,81 +1,89 @@
 {% extends "base.html" %}
 
+{% block page_title %}Players{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
-        <h2><i class="bi bi-people-fill"></i> Player Database</h2>
-    </div>
-
-    <div class="card mb-4 border-0 shadow-sm bg-light">
-        <div class="card-body">
-            <form method="GET" class="row g-2">
-                <div class="col-md-6">
-                    <label class="form-label small fw-bold">Search</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
-                        <input type="text" name="q" class="form-control" placeholder="Player name or club..." value="{{ current_search or '' }}">
+<div class="players-container">
+    <!-- Filter Card -->
+    <div class="filter-card">
+        <form method="GET" class="row g-3">
+            <div class="col-md-4">
+                <label class="dark-label">Search Player</label>
+                <div class="d-flex gap-2">
+                    <div class="flex-grow-1 position-relative">
+                        <i class="bi bi-search position-absolute"
+                            style="left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted);"></i>
+                        <input type="text" name="q" class="dark-input" style="padding-left: 40px;"
+                            placeholder="Name or club..." value="{{ current_search or '' }}">
                     </div>
                 </div>
+            </div>
 
-                <div class="col-md-3 d-flex align-items-end">
-                    <button class="btn btn-outline-dark w-100" type="button" data-bs-toggle="collapse" data-bs-target="#filterCollapse">
-                        <i class="bi bi-funnel"></i> Advanced Filters
-                    </button>
-                </div>
+            <div class="col-md-2">
+                <label class="dark-label">Position</label>
+                <select name="position" class="dark-select w-100">
+                    <option value="">All</option>
+                    <option value="Attack" {% if current_pos=='Attack' %}selected{% endif %}>Forward</option>
+                    <option value="Midfield" {% if current_pos=='Midfield' %}selected{% endif %}>Midfield</option>
+                    <option value="Defender" {% if current_pos=='Defender' %}selected{% endif %}>Defender</option>
+                    <option value="Goalkeeper" {% if current_pos=='Goalkeeper' %}selected{% endif %}>Goalkeeper</option>
+                </select>
+            </div>
 
-                <div class="col-md-3 d-flex align-items-end gap-2">
-                    <button type="submit" class="btn btn-primary flex-grow-1">Filter</button>
-                    <a href="{{ url_for('players.index') }}" class="btn btn-outline-secondary">Clear</a>
-                </div>
+            <div class="col-md-2">
+                <label class="dark-label">Country</label>
+                <input type="text" name="country" class="dark-input" placeholder="e.g. France"
+                    value="{{ current_country or '' }}">
+            </div>
 
-                <div class="collapse w-100 mt-3" id="filterCollapse">
-                    <div class="card card-body border bg-white">
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Position</label>
-                                <select name="position" class="form-select">
-                                    <option value="">All Positions</option>
-                                    <option value="Attack" {% if current_pos == 'Attack' %}selected{% endif %}>Attack</option>
-                                    <option value="Midfield" {% if current_pos == 'Midfield' %}selected{% endif %}>Midfield</option>
-                                    <option value="Defender" {% if current_pos == 'Defender' %}selected{% endif %}>Defender</option>
-                                    <option value="Goalkeeper" {% if current_pos == 'Goalkeeper' %}selected{% endif %}>Goalkeeper</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Country</label>
-                                <input type="text" name="country" class="form-control" placeholder="e.g. France" value="{{ current_country or '' }}">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <input type="hidden" name="sort_by" value="{{ current_sort }}">
-                <input type="hidden" name="order" value="{{ current_order }}">
-            </form>
-        </div>
+            <div class="col-md-4 d-flex align-items-end gap-2">
+                <button type="submit" class="btn-primary-dark flex-grow-1">
+                    <i class="bi bi-funnel-fill me-1"></i> Filter
+                </button>
+                <a href="{{ url_for('players.index') }}" class="btn-secondary-dark">
+                    <i class="bi bi-x-lg"></i>
+                </a>
+            </div>
+
+            <input type="hidden" name="sort_by" value="{{ current_sort }}">
+            <input type="hidden" name="order" value="{{ current_order }}">
+        </form>
     </div>
 
-    <div class="card shadow-sm border-0">
+    <!-- Players Table -->
+    <div class="dark-card">
         <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-dark text-nowrap">
+            <table class="dark-table">
+                <thead>
                     <tr>
-                        <th>
-                            <a href="{{ url_for('players.index', q=current_search, position=current_pos, country=current_country, sort_by='name', order='desc' if current_sort == 'name' and current_order == 'asc' else 'asc') }}" class="text-white text-decoration-none">
-                                Player Name <i class="bi bi-arrow-down-up small ms-1 text-secondary"></i>
+                        <th style="width: 30%">
+                            <a href="{{ url_for('players.index', q=current_search, position=current_pos, country=current_country, sort_by='name', order='desc' if current_sort == 'name' and current_order == 'asc' else 'asc') }}"
+                                class="text-secondary text-decoration-none">
+                                Player Name
+                                {% if current_sort == 'name' %}
+                                <i class="bi bi-arrow-{{ 'up' if current_order == 'asc' else 'down' }}"></i>
+                                {% endif %}
                             </a>
                         </th>
-                        <th>
-                            <a href="{{ url_for('players.index', q=current_search, position=current_pos, country=current_country, sort_by='age', order='desc' if current_sort == 'age' and current_order == 'asc' else 'asc') }}" class="text-white text-decoration-none">
-                                Age <i class="bi bi-arrow-down-up small ms-1 text-secondary"></i>
+                        <th style="width: 10%">
+                            <a href="{{ url_for('players.index', q=current_search, position=current_pos, country=current_country, sort_by='age', order='desc' if current_sort == 'age' and current_order == 'asc' else 'asc') }}"
+                                class="text-secondary text-decoration-none">
+                                Age
+                                {% if current_sort == 'age' %}
+                                <i class="bi bi-arrow-{{ 'up' if current_order == 'asc' else 'down' }}"></i>
+                                {% endif %}
                             </a>
                         </th>
-                        <th>Club</th>
-                        <th>Country</th>
-                        <th>Position</th>
-                        <th class="text-end">
-                            <a href="{{ url_for('players.index', q=current_search, position=current_pos, country=current_country, sort_by='market_value_in_eur', order='desc' if current_sort == 'market_value_in_eur' and current_order == 'asc' else 'asc') }}" class="text-white text-decoration-none">
-                                Market Value <i class="bi bi-arrow-down-up small ms-1 text-secondary"></i>
+                        <th style="width: 20%">Club</th>
+                        <th style="width: 15%">Country</th>
+                        <th style="width: 10%">Position</th>
+                        <th style="width: 15%" class="text-end">
+                            <a href="{{ url_for('players.index', q=current_search, position=current_pos, country=current_country, sort_by='market_value_in_eur', order='desc' if current_sort == 'market_value_in_eur' and current_order == 'asc' else 'asc') }}"
+                                class="text-secondary text-decoration-none">
+                                Market Value
+                                {% if current_sort == 'market_value_in_eur' %}
+                                <i class="bi bi-arrow-{{ 'up' if current_order == 'asc' else 'down' }}"></i>
+                                {% endif %}
                             </a>
                         </th>
                     </tr>
@@ -83,63 +91,79 @@
                 <tbody>
                     {% for p in players %}
                     <tr>
-                        <td class="fw-bold">{{ p.name }}</td>
+                        <td><span class="fw-bold">{{ p.name }}</span></td>
                         <td>{{ p.age }}</td>
-                        <td>{{ p.club_name or '-' }}</td>
+                        <td><span class="badge-dark badge-gray">{{ p.club_name or '-' }}</span></td>
                         <td>{{ p.country_of_citizenship }}</td>
                         <td>
-                            {% if p.position == 'Goalkeeper' %} <span class="badge bg-warning text-dark">GK</span>
-                            {% elif p.position == 'Defender' %} <span class="badge bg-info text-dark">DF</span>
-                            {% elif p.position == 'Midfield' %} <span class="badge bg-success">MF</span>
-                            {% elif p.position == 'Attack' %} <span class="badge bg-danger">FW</span>
-                            {% else %} <span class="badge bg-secondary">{{ p.position }}</span> {% endif %}
+                            {% if p.position == 'Goalkeeper' %}
+                            <span class="position-badge position-gk">GK</span>
+                            {% elif p.position == 'Defender' %}
+                            <span class="position-badge position-df">DF</span>
+                            {% elif p.position == 'Midfield' %}
+                            <span class="position-badge position-mf">MF</span>
+                            {% elif p.position == 'Attack' %}
+                            <span class="position-badge position-fw">FW</span>
+                            {% else %}
+                            <span class="badge-dark badge-gray">{{ p.position }}</span>
+                            {% endif %}
                         </td>
-                        <td class="text-end fw-bold text-success">
-                            €{{ "{:,.0f}".format(p.market_value_in_eur) if p.market_value_in_eur else '0' }}
+                        <td class="text-end">
+                            <span class="value-display">€{{ "{:,.0f}".format(p.market_value_in_eur) if
+                                p.market_value_in_eur else '0' }}</span>
                         </td>
                     </tr>
                     {% else %}
                     <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">No players found.</td>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <i class="bi bi-people"></i>
+                                <p>No players found.</p>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </div>
-    </div>
 
-    {% if total_pages > 1 %}
-    <div class="d-flex flex-column align-items-center mt-4 mb-5">
-        
-        <nav aria-label="Page navigation" class="mb-3">
-            <ul class="pagination">
-                <li class="page-item {{ 'disabled' if page == 1 }}">
-                    <a class="page-link" href="{{ url_for('players.index', **dict(request.args, page=page-1)) }}">Previous</a>
-                </li>
-                {% for p in range([page - 2, 1]|max, [page + 2, total_pages]|min + 1) %}
-                <li class="page-item {{ 'active' if p == page else '' }}">
-                    <a class="page-link" href="{{ url_for('players.index', **dict(request.args, page=p)) }}">{{ p }}</a>
-                </li>
-                {% endfor %}
-                <li class="page-item {{ 'disabled' if page == total_pages }}">
-                    <a class="page-link" href="{{ url_for('players.index', **dict(request.args, page=page+1)) }}">Next</a>
-                </li>
-            </ul>
-        </nav>
-        
-        <form method="GET" action="{{ url_for('players.index') }}" class="d-flex align-items-center bg-light p-2 rounded border">
-            {% for key, value in request.args.items() %}
-                {% if key != 'page' %}
-                <input type="hidden" name="{{ key }}" value="{{ value }}">
-                {% endif %}
-            {% endfor %}
-            <span class="text-muted small me-2">Go to page:</span>
-            <input type="number" name="page" class="form-control form-control-sm me-2 text-center" style="width: 70px;" min="1" max="{{ total_pages }}" value="{{ page }}">
-            <button type="submit" class="btn btn-sm btn-dark">Go</button>
-            <span class="text-muted small ms-3">of {{ total_pages }}</span>
-        </form>
-
+        {% if total_pages > 1 %}
+        <div class="dark-card-footer d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <span class="text-muted small">Page {{ page }} / {{ total_pages }}</span>
+            <div class="d-flex align-items-center gap-3">
+                <nav class="pagination-dark">
+                    <div class="page-item {{ 'disabled' if page == 1 else '' }}">
+                        <a class="page-link" href="{{ url_for('players.index', **dict(request.args, page=page-1)) }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </div>
+                    {% for p in range([page - 2, 1]|max, [page + 2, total_pages]|min + 1) %}
+                    <div class="page-item {{ 'active' if p == page else '' }}">
+                        <a class="page-link" href="{{ url_for('players.index', **dict(request.args, page=p)) }}">{{ p
+                            }}</a>
+                    </div>
+                    {% endfor %}
+                    <div class="page-item {{ 'disabled' if page == total_pages else '' }}">
+                        <a class="page-link" href="{{ url_for('players.index', **dict(request.args, page=page+1)) }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </div>
+                </nav>
+                <form method="GET" action="{{ url_for('players.index') }}" class="d-flex align-items-center gap-2">
+                    {% for key, value in request.args.items() %}
+                    {% if key != 'page' %}
+                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                    {% endif %}
+                    {% endfor %}
+                    <span class="text-muted small">Go to:</span>
+                    <input type="number" name="page" class="dark-input text-center" style="width: 60px; padding: 6px;"
+                        min="1" max="{{ total_pages }}" value="{{ page }}">
+                    <button type="submit" class="btn-primary-dark" style="padding: 6px 12px;"><i
+                            class="bi bi-arrow-right"></i></button>
+                </form>
+            </div>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 </div>
 {% endblock %}

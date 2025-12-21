@@ -34,8 +34,12 @@ class GamesModel:
         if competition_type:
             where_clauses.append("competition_type = %s")
             params.append(competition_type)
+        # Add base NULL filters for essential fields
+        where_clauses.append("home_club_name IS NOT NULL AND home_club_name != ''")
+        where_clauses.append("away_club_name IS NOT NULL AND away_club_name != ''")
+        where_clauses.append("date IS NOT NULL")
             
-        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        where_str = " WHERE " + " AND ".join(where_clauses)
         
         allowed_columns = {
             "date": "date", 
@@ -92,8 +96,12 @@ class GamesModel:
         if competition_type:
             where_clauses.append("competition_type = %s")
             params.append(competition_type)
+        # Add base NULL filters for essential fields
+        where_clauses.append("home_club_name IS NOT NULL AND home_club_name != ''")
+        where_clauses.append("away_club_name IS NOT NULL AND away_club_name != ''")
+        where_clauses.append("date IS NOT NULL")
 
-        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        where_str = " WHERE " + " AND ".join(where_clauses)
         try:
             cursor = conn.cursor(dictionary=True)
             query = f"SELECT COUNT(*) as total FROM games {where_str}"

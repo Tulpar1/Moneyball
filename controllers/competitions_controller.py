@@ -4,10 +4,6 @@ from functools import wraps
 
 competitions_bp = Blueprint('competitions', __name__, url_prefix='/competitions')
 
-def format_text(text):
-    if not text: return ""
-    return text.replace('-', ' ').replace('_', ' ').title()
-
 # Yetki kontrolü (Daha önce Clubs'a eklediysen oradan da import edebilirsin)
 def login_required(f):
     @wraps(f)

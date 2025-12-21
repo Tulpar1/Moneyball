@@ -1,124 +1,199 @@
 {% extends "base.html" %}
 
+{% block page_title %}Dashboard{% endblock %}
+
 {% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
-        <div>
-            <h2 class="fw-bold text-dark">Dashboard</h2>
-            <p class="text-muted mb-0">Welcome back, {{ session.get('full_name', 'Manager') }}</p>
+<div class="dashboard-container">
+    <!-- Stat Cards Row -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">28,459</div>
+                    <div class="stat-label">Total Players</div>
+                </div>
+            </div>
         </div>
-        <div>
-            <a href="{{ url_for('games.index') }}" class="btn btn-outline-primary btn-sm me-2">All Games</a>
-            <a href="{{ url_for('player_valuations.index') }}" class="btn btn-primary btn-sm">All Valuations</a>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="bi bi-shield-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">509</div>
+                    <div class="stat-label">Clubs</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon yellow">
+                    <i class="bi bi-calendar-event-fill"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">69,782</div>
+                    <div class="stat-label">Matches</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="bi bi-currency-euro"></i>
+                </div>
+                <div class="stat-info">
+                    <div class="stat-value">€180M</div>
+                    <div class="stat-label">Highest Value</div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-lg-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-bottom-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-primary">
-                        <i class="bi bi-clock-history me-2"></i>Recent Matches
-                    </h5>
+    <!-- Main Content Row -->
+    <div class="row g-4">
+        <!-- Recent Matches -->
+        <div class="col-lg-7">
+            <div class="dark-card">
+                <div class="dark-card-header">
+                    <h3 class="dark-card-title">
+                        <i class="bi bi-clock-history text-blue"></i>
+                        Recent Matches
+                    </h3>
+                    <a href="{{ url_for('games.index') }}" class="badge-dark badge-blue">
+                        View All <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0 text-center">
-                            <thead class="table-light text-muted small">
-                                <tr>
-                                    <th>Date</th>
-                                    <th class="text-end">Home</th>
-                                    <th>Score</th>
-                                    <th class="text-start">Away</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for game in games %}
-                                <tr>
-                                    <td class="text-muted small">{{ game.formatted_date }}</td>
-                                    
-                                    <td class="text-end fw-bold text-truncate" style="max-width: 120px;" title="{{ game.home_club_name }}">
-                                        {{ game.home_club_name }}
-                                    </td>
-                                    
-                                    <td>
-                                        <span class="badge bg-dark border border-light">
-                                            {{ game.home_club_goals }} - {{ game.away_club_goals }}
-                                        </span>
-                                    </td>
-                                    
-                                    <td class="text-start fw-bold text-truncate" style="max-width: 120px;" title="{{ game.away_club_name }}">
-                                        {{ game.away_club_name }}
-                                    </td>
-                                </tr>
+                <div class="dark-card-body" style="padding: 12px;">
+                    {% for game in games %}
+                    <div class="match-card">
+                        <div class="match-header">
+                            <span><i class="bi bi-calendar3 me-1"></i>{{ game.formatted_date }}</span>
+                            <span class="badge-dark badge-gray">{{ game.competition_id }}</span>
+                        </div>
+                        <div class="match-body">
+                            <div class="match-team home">
+                                {% if game.home_club_image %}
+                                <img src="{{ game.home_club_image }}" class="match-team-logo" alt="">
                                 {% else %}
-                                <tr>
-                                    <td colspan="4" class="text-center py-3 text-muted">No recent games found.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                                <div class="match-team-logo d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-shield" style="color: var(--text-muted);"></i>
+                                </div>
+                                {% endif %}
+                                <span class="match-team-name">{{ game.home_club_name or 'Home' }}</span>
+                            </div>
+                            <div class="match-score">
+                                {{ game.home_club_goals }} - {{ game.away_club_goals }}
+                            </div>
+                            <div class="match-team away">
+                                {% if game.away_club_image %}
+                                <img src="{{ game.away_club_image }}" class="match-team-logo" alt="">
+                                {% else %}
+                                <div class="match-team-logo d-flex align-items-center justify-content-center">
+                                    <i class="bi bi-shield" style="color: var(--text-muted);"></i>
+                                </div>
+                                {% endif %}
+                                <span class="match-team-name">{{ game.away_club_name or 'Away' }}</span>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div class="card-footer bg-white text-center border-top-0 py-3">
-                    <a href="{{ url_for('games.index') }}" class="text-decoration-none small fw-bold">View Match Reports <i class="bi bi-arrow-right"></i></a>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-calendar-x"></i>
+                        <p>No match data found.</p>
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
 
-        <div class="col-lg-6 mb-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-bottom-0 py-3">
-                    <h5 class="card-title mb-0 fw-bold text-success">
-                        <i class="bi bi-graph-up-arrow me-2"></i>Top Market Values
-                    </h5>
+        <!-- Top Market Values -->
+        <div class="col-lg-5">
+            <div class="dark-card">
+                <div class="dark-card-header">
+                    <h3 class="dark-card-title">
+                        <i class="bi bi-graph-up-arrow text-green"></i>
+                        Top Valued Players
+                    </h3>
+                    <a href="{{ url_for('player_valuations.index') }}" class="badge-dark badge-green">
+                        All <i class="bi bi-arrow-right"></i>
+                    </a>
                 </div>
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light text-muted small">
-                                <tr>
-                                    <th class="ps-3">Player</th>
-                                    <th>Club</th>
-                                    <th class="text-end pe-3">Value</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for val in valuations %}
-                                <tr>
-                                    <td class="ps-3">
-                                        <div class="d-flex align-items-center">
-                                            <img src="{{ val.player_image or 'https://www.transfermarkt.com.tr/assets/img/dummy_spieler.png' }}" 
-                                                 class="rounded-circle border me-2" width="32" height="32" style="object-fit: cover;">
-                                            <div>
-                                                <div class="fw-bold small">{{ val.player_name }}</div>
-                                                <div class="text-muted" style="font-size: 10px;">{{ val.formatted_date }}</div>
-                                            </div>
+                <div class="dark-card-body p-0">
+                    <table class="dark-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 50%">Player</th>
+                                <th>Club</th>
+                                <th class="text-end">Value</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for val in valuations %}
+                            <tr>
+                                <td>
+                                    <div class="player-row">
+                                        <img src="{{ val.player_image or 'https://www.transfermarkt.com.tr/assets/img/dummy_spieler.png' }}"
+                                            class="player-avatar" alt="">
+                                        <div class="player-info">
+                                            <span class="player-name">{{ val.player_name }}</span>
+                                            <span class="player-meta">{{ val.formatted_date }}</span>
                                         </div>
-                                    </td>
-                                    
-                                    <td class="small text-truncate" style="max-width: 120px;">
-                                        <span class="badge bg-light text-dark border">{{ val.club_name or 'Free Agent' }}</span>
-                                    </td>
-                                    
-                                    <td class="text-end fw-bold text-success pe-3">
-                                        €{{ "{:,.0f}".format(val.market_value_in_eur) }}
-                                    </td>
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="3" class="text-center py-3 text-muted">No valuation data found.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge-dark badge-gray">{{ val.club_name or 'Free Agent' }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="value-display">€{{ "{:,.0f}".format(val.market_value_in_eur) }}</span>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="3">
+                                    <div class="empty-state">
+                                        <i class="bi bi-graph-down"></i>
+                                        <p>No valuation data found.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-footer bg-white text-center border-top-0 py-3">
-                    <a href="{{ url_for('player_valuations.index') }}" class="text-decoration-none small fw-bold text-success">View All Valuations <i class="bi bi-arrow-right"></i></a>
+            </div>
+
+            <!-- Position Distribution Chart -->
+            <div class="dark-card mt-4">
+                <div class="dark-card-header">
+                    <h3 class="dark-card-title">
+                        <i class="bi bi-pie-chart-fill text-purple"></i>
+                        Position Distribution
+                    </h3>
+                </div>
+                <div class="dark-card-body">
+                    <div class="chart-container">
+                        <canvas id="positionChart"></canvas>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        createDonutChart(
+            'positionChart',
+            [35, 30, 25, 10],
+            ['Forward', 'Midfield', 'Defense', 'Goalkeeper'],
+            ['#f85149', '#3fb950', '#58a6ff', '#d29922']
+        );
+    });
+</script>
 {% endblock %}

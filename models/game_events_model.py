@@ -34,8 +34,14 @@ class GameEventsModel:
         if max_minute:
             where_clauses.append("ge.minute <= %s")
             params.append(max_minute)
+        # Add base NULL filters for essential fields
+        where_clauses.append("p.name IS NOT NULL AND p.name != ''")
+        where_clauses.append("ge.type IS NOT NULL AND ge.type != ''")
+        where_clauses.append("ge.minute IS NOT NULL")
+        where_clauses.append("g.home_club_name IS NOT NULL")
+        where_clauses.append("g.away_club_name IS NOT NULL")
             
-        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        where_str = " WHERE " + " AND ".join(where_clauses)
         
         allowed_columns = {
             "minute": "ge.minute",
@@ -101,8 +107,14 @@ class GameEventsModel:
         if max_minute:
             where_clauses.append("ge.minute <= %s")
             params.append(max_minute)
+        # Add base NULL filters for essential fields
+        where_clauses.append("p.name IS NOT NULL AND p.name != ''")
+        where_clauses.append("ge.type IS NOT NULL AND ge.type != ''")
+        where_clauses.append("ge.minute IS NOT NULL")
+        where_clauses.append("g.home_club_name IS NOT NULL")
+        where_clauses.append("g.away_club_name IS NOT NULL")
 
-        where_str = " WHERE " + " AND ".join(where_clauses) if where_clauses else ""
+        where_str = " WHERE " + " AND ".join(where_clauses)
         try:
             cursor = conn.cursor(dictionary=True)
             query = f"""

@@ -1,179 +1,218 @@
 {% extends "base.html" %}
 
-{% block content %}
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary"><i class="bi bi-shield-shaded"></i> Kulüp Yönetimi</h2>
-        
-        {% if session.get('role') == 'admin' %}
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addClubModal">
-            <i class="bi bi-plus-circle"></i> Yeni Kulüp Ekle
-        </button>
-        {% endif %}
-    </div>
+{% block page_title %}Clubs{% endblock %}
 
-    <div class="row">
-        <div class="col-md-3">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-light">
-                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtreler</h5>
+{% block content %}
+<div class="clubs-container">
+    <div class="row g-4">
+        <!-- Filter Sidebar -->
+        <div class="col-lg-3">
+            <div class="dark-card">
+                <div class="dark-card-header">
+                    <h3 class="dark-card-title">
+                        <i class="bi bi-funnel-fill"></i> Filters
+                    </h3>
                 </div>
-                <div class="card-body">
+                <div class="dark-card-body">
                     <form method="GET" action="{{ url_for('clubs.index') }}">
                         <div class="mb-3">
-                            <label class="form-label">Kulüp Adı</label>
-                            <input type="text" name="q" class="form-control" value="{{ filters.get('q', '') }}" placeholder="Örn: Galatasaray">
+                            <label class="dark-label">Club Name</label>
+                            <input type="text" name="q" class="dark-input" value="{{ filters.get('q', '') }}"
+                                placeholder="e.g. Manchester">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Lig ID</label>
-                            <input type="text" name="league" class="form-control" value="{{ filters.get('league', '') }}" placeholder="Örn: TR1">
+                            <label class="dark-label">League Code</label>
+                            <input type="text" name="league" class="dark-input" value="{{ filters.get('league', '') }}"
+                                placeholder="e.g. GB1">
                         </div>
                         <div class="mb-3">
-                            <label class="form-label">Kadro Boyutu (2022)</label>
-                            <div class="input-group">
-                                <input type="number" name="min_squad" class="form-control" placeholder="Min" value="{{ filters.get('min_squad', '') }}">
-                                <span class="input-group-text">-</span>
-                                <input type="number" name="max_squad" class="form-control" placeholder="Max" value="{{ filters.get('max_squad', '') }}">
+                            <label class="dark-label">Squad Size</label>
+                            <div class="d-flex gap-2">
+                                <input type="number" name="min_squad" class="dark-input" placeholder="Min"
+                                    value="{{ filters.get('min_squad', '') }}">
+                                <input type="number" name="max_squad" class="dark-input" placeholder="Max"
+                                    value="{{ filters.get('max_squad', '') }}">
                             </div>
                         </div>
                         <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-primary">Uygula</button>
-                            <a href="{{ url_for('clubs.index') }}" class="btn btn-outline-secondary">Sıfırla</a>
+                            <button type="submit" class="btn-primary-dark">
+                                <i class="bi bi-search me-1"></i> Apply
+                            </button>
+                            <a href="{{ url_for('clubs.index') }}" class="btn-secondary-dark text-center">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Reset
+                            </a>
                         </div>
                     </form>
                 </div>
             </div>
-        </div>
 
-        <div class="col-md-9">
-            <div class="card shadow-sm border-0">
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Kulüp Adı</th>
-                                    <th>Lig</th>
-                                    <th>Kadro (Squad Size)</th>
-                                    {% if session.get('role') == 'admin' %}
-                                    <th>İşlemler</th>
-                                    {% endif %}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for club in clubs %}
-                                <tr>
-                                    <td><span class="badge bg-secondary">{{ club.club_id }}</span></td>
-                                    
-                                    <td>
-                                        <div class="d-flex align-items-center">
-                                            {% if club.image_url %}
-                                                <img src="{{ club.image_url }}" alt="Logo" class="rounded-circle me-2" width="30" height="30" style="object-fit: contain;">
-                                            {% endif %}
-                                            
-                                            {% if club.url %}
-                                                <a href="{{ club.url }}" target="_blank" class="text-decoration-none fw-bold text-dark">
-                                                    {{ club.name }} <i class="bi bi-box-arrow-up-right small text-muted" style="font-size: 0.7em;"></i>
-                                                </a>
-                                            {% else %}
-                                                <strong>{{ club.name }}</strong>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-
-                                    <td>
-                                        {% if club.league_name %}
-                                            {{ club.league_name }}
-                                            <br>
-                                            <small class="text-muted" style="font-size: 0.8em;">({{ club.domestic_competition_id }})</small>
-                                        {% else %}
-                                            {{ club.domestic_competition_id }}
-                                        {% endif %}
-                                    </td>
-
-                                    <td>
-                                        <div class="progress" style="height: 20px;">
-                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ club.squad_size }}%;" aria-valuenow="{{ club.squad_size }}" aria-valuemin="0" aria-valuemax="50">
-                                                {{ club.squad_size }}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    
-                                    {% if session.get('role') == 'admin' %}
-                                    <td>
-                                        <div class="btn-group" role="group">
-                                            <button class="btn btn-sm btn-outline-primary" onclick="editClub({{ club.club_id }})">
-                                                <i class="bi bi-pencil-square"></i> Düzenle
-                                            </button>
-                                            
-                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteClub({{ club.club_id }})">
-                                                <i class="bi bi-trash"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                    {% endif %}
-                                </tr>
-                                {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center py-4">Kayıt bulunamadı.</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+            {% if session.get('role') == 'admin' %}
+            <div class="dark-card mt-4">
+                <div class="dark-card-header">
+                    <h3 class="dark-card-title">
+                        <i class="bi bi-plus-circle"></i> Management
+                    </h3>
                 </div>
-                
-                <div class="card-footer bg-white d-flex justify-content-between py-3">
-                    <small class="text-muted">Toplam {{ total_count }} kulüp gösteriliyor</small>
-                    <nav>
-                        <ul class="pagination pagination-sm mb-0">
-                            {% if page > 1 %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('clubs.index', page=page-1, **filters) }}">« Önceki</a>
-                            </li>
-                            {% endif %}
-                            
-                            <li class="page-item disabled"><span class="page-link">{{ page }} / {{ total_pages }}</span></li>
-
-                            {% if page < total_pages %}
-                            <li class="page-item">
-                                <a class="page-link" href="{{ url_for('clubs.index', page=page+1, **filters) }}">Sonraki »</a>
-                            </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
+                <div class="dark-card-body">
+                    <button class="btn-primary-dark w-100" data-bs-toggle="modal" data-bs-target="#addClubModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add New Club
+                    </button>
                 </div>
             </div>
+            {% endif %}
+        </div>
+
+        <!-- Clubs Table -->
+        <div class="col-lg-9">
+            <div class="dark-card">
+                <div class="dark-card-header">
+                    <h3 class="dark-card-title">
+                        <i class="bi bi-shield-fill text-blue"></i>
+                        Club List
+                    </h3>
+                    <span class="badge-dark badge-blue">{{ total_count }} clubs</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="dark-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%">ID</th>
+                                <th style="width: 35%">Club Name</th>
+                                <th style="width: 20%">League</th>
+                                <th style="width: 22%">Squad Size</th>
+                                {% if session.get('role') == 'admin' %}
+                                <th style="width: 15%">Actions</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for club in clubs %}
+                            <tr>
+                                <td><span class="badge-dark badge-gray">{{ club.club_id }}</span></td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        {% if club.image_url %}
+                                        <img src="{{ club.image_url }}" alt=""
+                                            style="width: 28px; height: 28px; object-fit: contain;">
+                                        {% else %}
+                                        <div
+                                            style="width: 28px; height: 28px; background: var(--bg-tertiary); border-radius: 4px; display: flex; align-items: center; justify-content: center;">
+                                            <i class="bi bi-shield"
+                                                style="color: var(--text-muted); font-size: 14px;"></i>
+                                        </div>
+                                        {% endif %}
+                                        <div>
+                                            {% if club.url %}
+                                            <a href="{{ club.url }}" target="_blank" class="fw-bold">
+                                                {{ club.name }} <i class="bi bi-box-arrow-up-right"
+                                                    style="font-size: 10px;"></i>
+                                            </a>
+                                            {% else %}
+                                            <span class="fw-bold">{{ club.name }}</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if club.league_name %}
+                                    <span>{{ club.league_name }}</span><br>
+                                    <small class="text-muted">{{ club.domestic_competition_id }}</small>
+                                    {% else %}
+                                    <span class="badge-dark badge-gray">{{ club.domestic_competition_id }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="progress-dark flex-grow-1">
+                                            <div class="progress-dark-bar blue"
+                                                style="width: {{ (club.squad_size or 0) * 2 }}%;"></div>
+                                        </div>
+                                        <span class="text-muted small" style="min-width: 24px;">{{ club.squad_size or 0
+                                            }}</span>
+                                    </div>
+                                </td>
+                                {% if session.get('role') == 'admin' %}
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn-secondary-dark" style="padding: 6px 10px; font-size: 12px;"
+                                            onclick="editClub({{ club.club_id }})">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn-danger-dark" style="padding: 6px 10px; font-size: 12px;"
+                                            onclick="deleteClub({{ club.club_id }})">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="{% if session.get('role') == 'admin' %}5{% else %}4{% endif %}">
+                                    <div class="empty-state">
+                                        <i class="bi bi-shield-x"></i>
+                                        <p>No clubs found.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if total_pages > 1 %}
+                <div class="dark-card-footer d-flex justify-content-between align-items-center">
+                    <span class="text-muted small">Page {{ page }} / {{ total_pages }}</span>
+                    <nav class="pagination-dark">
+                        {% if page > 1 %}
+                        <div class="page-item">
+                            <a class="page-link" href="{{ url_for('clubs.index', page=page-1, **filters) }}">
+                                <i class="bi bi-chevron-left"></i> Previous
+                            </a>
+                        </div>
+                        {% endif %}
+                        <div class="page-item disabled">
+                            <span class="page-link">{{ page }} / {{ total_pages }}</span>
+                        </div>
+                        {% if page < total_pages %} <div class="page-item">
+                            <a class="page-link" href="{{ url_for('clubs.index', page=page+1, **filters) }}">
+                                Next <i class="bi bi-chevron-right"></i>
+                            </a>
+                </div>
+                {% endif %}
+                </nav>
+            </div>
+            {% endif %}
         </div>
     </div>
+</div>
 </div>
 
 {% if session.get('role') == 'admin' %}
 <div class="modal fade" id="addClubModal" tabindex="-1">
     <div class="modal-dialog">
         <form action="{{ url_for('clubs.add_club') }}" method="POST">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Yeni Kulüp Ekle</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-content" style="background: var(--bg-secondary); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-color: var(--border-color);">
+                    <h5 class="modal-title">Add New Club</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label>Kulüp Adı</label>
-                        <input type="text" name="name" class="form-control" required>
+                        <label class="dark-label">Club Name</label>
+                        <input type="text" name="name" class="dark-input" required>
                     </div>
                     <div class="mb-3">
-                        <label>Lig Kodu (Örn: TR1)</label>
-                        <input type="text" name="domestic_competition_id" class="form-control" required>
+                        <label class="dark-label">League Code (e.g. GB1)</label>
+                        <input type="text" name="domestic_competition_id" class="dark-input" required>
                     </div>
                     <div class="mb-3">
-                        <label>Kadro Boyutu</label>
-                        <input type="number" name="squad_size" class="form-control" value="25">
+                        <label class="dark-label">Squad Size</label>
+                        <input type="number" name="squad_size" class="dark-input" value="25">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-success">Kaydet</button>
+                <div class="modal-footer" style="border-color: var(--border-color);">
+                    <button type="submit" class="btn-primary-dark">Save</button>
                 </div>
             </div>
         </form>
@@ -183,27 +222,28 @@
 <div class="modal fade" id="editClubModal" tabindex="-1">
     <div class="modal-dialog">
         <form id="editClubForm" method="POST">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Kulübü Düzenle</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-content" style="background: var(--bg-secondary); border: 1px solid var(--border-color);">
+                <div class="modal-header" style="border-color: var(--border-color);">
+                    <h5 class="modal-title">Edit Club</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label>Kulüp Adı</label>
-                        <input type="text" id="edit_name" name="name" class="form-control" required>
+                        <label class="dark-label">Club Name</label>
+                        <input type="text" id="edit_name" name="name" class="dark-input" required>
                     </div>
                     <div class="mb-3">
-                        <label>Lig Kodu</label>
-                        <input type="text" id="edit_competition" name="domestic_competition_id" class="form-control" required>
+                        <label class="dark-label">League Code</label>
+                        <input type="text" id="edit_competition" name="domestic_competition_id" class="dark-input"
+                            required>
                     </div>
                     <div class="mb-3">
-                        <label>Kadro Boyutu</label>
-                        <input type="number" id="edit_squad" name="squad_size" class="form-control">
+                        <label class="dark-label">Squad Size</label>
+                        <input type="number" id="edit_squad" name="squad_size" class="dark-input">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                <div class="modal-footer" style="border-color: var(--border-color);">
+                    <button type="submit" class="btn-primary-dark">Update</button>
                 </div>
             </div>
         </form>
@@ -214,33 +254,27 @@
 {% endif %}
 
 <script>
-function editClub(clubId) {
-    fetch('/clubs/get/' + clubId)
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                alert('Hata: ' + data.error);
-                return;
-            }
-            document.getElementById('edit_name').value = data.name;
-            document.getElementById('edit_competition').value = data.domestic_competition_id;
-            document.getElementById('edit_squad').value = data.squad_size;
-            
-            document.getElementById('editClubForm').action = '/clubs/update/' + clubId;
-            
-            var myModal = new bootstrap.Modal(document.getElementById('editClubModal'));
-            myModal.show();
-        })
-        .catch(err => console.error('Hata:', err));
-}
-
-function deleteClub(clubId) {
-    if (confirm("Bu kulübü silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
-        // Silme işlemi için dinamik form gönderimi
-        var form = document.getElementById('deleteForm');
-        form.action = '/clubs/delete/' + clubId;
-        form.submit();
+    function editClub(clubId) {
+        fetch('/clubs/get/' + clubId)
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) { alert('Error: ' + data.error); return; }
+                document.getElementById('edit_name').value = data.name;
+                document.getElementById('edit_competition').value = data.domestic_competition_id;
+                document.getElementById('edit_squad').value = data.squad_size;
+                document.getElementById('editClubForm').action = '/clubs/update/' + clubId;
+                var myModal = new bootstrap.Modal(document.getElementById('editClubModal'));
+                myModal.show();
+            })
+            .catch(err => console.error('Error:', err));
     }
-}
+
+    function deleteClub(clubId) {
+        if (confirm("Are you sure you want to delete this club? This action cannot be undone!")) {
+            var form = document.getElementById('deleteForm');
+            form.action = '/clubs/delete/' + clubId;
+            form.submit();
+        }
+    }
 </script>
 {% endblock %}
