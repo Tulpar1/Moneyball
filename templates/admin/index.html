@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="mb-4">
+        <h3>Hoş geldin, {{ session.get('username', 'Admin') }}!</h3>
+        <p class="text-muted">Moneyball Veritabanı yönetim paneline buradan başlayabilirsin.</p>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-primary text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0"><i class="bi bi-people-fill me-2"></i> Toplam Oyuncu</h6>
+                    </div>
+                    <h2 class="display-5 fw-bold mb-3">{{ "{:,}".format(player_count) }}</h2>
+                    <a href="{{ url_for('admin.view_table', table_name='players') }}" class="text-white text-decoration-none small">
+                        Detayları Gör →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-success text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0"><i class="bi bi-shield-shaded me-2"></i> Toplam Kulüp</h6>
+                    </div>
+                    <h2 class="display-5 fw-bold mb-3">{{ club_count }}</h2>
+                    <a href="{{ url_for('admin.view_table', table_name='clubs') }}" class="text-white text-decoration-none small">
+                        Detayları Gör →
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm bg-dark text-white h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="mb-0"><i class="bi bi-calendar-event me-2"></i> Toplam Maç</h6>
+                    </div>
+                    <h2 class="display-5 fw-bold mb-3">{{ "{:,}".format(game_count) }}</h2>
+                    <a href="{{ url_for('admin.view_table', table_name='games') }}" class="text-white text-decoration-none small">
+                        Detayları Gör →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white fw-bold">Veritabanı Tabloları</div>
+                <div class="card-body">
+                    <div class="list-group">
+                        {% for table in tables %}
+                        <a href="{{ url_for('admin.view_table', table_name=table) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                            {{ table|capitalize }}
+                            <span class="badge bg-secondary rounded-pill">Yönet</span>
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

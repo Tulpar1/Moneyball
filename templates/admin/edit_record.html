@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow border-0 col-md-8 mx-auto">
+        <div class="card-header bg-dark text-white">
+            <h5>{{ 'Edit' if record else 'Add New' }} - {{ table_name }}</h5>
+        </div>
+        <div class="card-body p-4">
+            <form method="POST">
+                {% for col in columns %}
+                    {# 'name' alanı players tablosunda otomatik birleştirildiği için gizli tutuluyor #}
+                    {% if table_name == 'players' and col.Field == 'name' %}
+                        <input type="hidden" name="name" value="{{ record['name'] if record and record['name'] is not none else '' }}">
+                    {% else %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small text-uppercase mb-1">{{ col.Field }}</label>
+                            
+                            {% if 'auto_increment' in col.Extra %}
+                                {# Auto increment alanlar sadece okunur #}
+                                <input type="text" class="form-control bg-light" 
+                                       value="{{ record[col.Field] if record and record[col.Field] is not none else 'Auto' }}" readonly>
+                            {% else %}
+                                {# ANA DÜZELTME BURADA: record[col.Field] is not none kontrolü eklendi #}
+                                <input type="text" name="{{ col.Field }}" class="form-control" 
+                                       value="{{ record[col.Field] if record and record[col.Field] is not none else '' }}" 
+                                       {{ 'required' if col.Null == 'NO' and col.Default is none }}>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="{{ url_for('admin.view_table', table_name=table_name) }}" class="btn btn-secondary px-4">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-5">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

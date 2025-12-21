@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+        <h2><i class="bi bi-stopwatch"></i> Match Events</h2>
+    </div>
+
+    <div class="card mb-4 border-0 shadow-sm bg-light">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('game_events.index') }}">
+                <div class="row g-2">
+                    <div class="col-md-5">
+                        <label class="form-label small fw-bold">Search Player</label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                            <input type="text" name="player_name" class="form-control" placeholder="Player name..." value="{{ filters.player_name or '' }}">
+                        </div>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-outline-dark w-100" type="button" data-bs-toggle="collapse" data-bs-target="#advancedFilter">
+                            <i class="bi bi-funnel"></i> Advanced Filters
+                        </button>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">Search</button>
+                        <a href="{{ url_for('game_events.index') }}" class="btn btn-outline-secondary">Clear</a>
+                    </div>
+                </div>
+
+                <div class="collapse mt-3 {{ 'show' if filters.club_name or filters.event_type or filters.min_minute }}" id="advancedFilter">
+                    <div class="card card-body border bg-white">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Club Name</label>
+                                <input type="text" name="club_name" class="form-control" value="{{ filters.club_name or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Event Type</label>
+                                <select name="event_type" class="form-select">
+                                    <option value="">All Types</option>
+                                    <option value="Goals" {% if filters.event_type == 'Goals' %}selected{% endif %}>Goal</option>
+                                    <option value="Substitutions" {% if filters.event_type == 'Substitutions' %}selected{% endif %}>Substitution</option>
+                                    <option value="Penalty" {% if filters.event_type == 'Penalty' %}selected{% endif %}>Penalty</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Min Minute</label>
+                                <input type="number" name="min_minute" class="form-control" value="{{ filters.min_minute or '' }}">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small fw-bold">Max Minute</label>
+                                <input type="number" name="max_minute" class="form-control" value="{{ filters.max_minute or '' }}">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="sort" value="{{ filters.sort or 'minute' }}">
+                <input type="hidden" name="order" value="{{ filters.order or 'asc' }}">
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0 mb-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0 text-center" style="table-layout: fixed;">
+                <thead class="table-dark text-nowrap">
+                    <tr>
+                        <th style="width: 12%">Date</th>
+                        <th style="width: 20%">Match</th>
+                        <th style="width: 8%">Min</th>
+                        <th style="width: 12%">Event</th>
+                        <th style="width: 15%">Club</th>
+                        <th style="width: 15%">Player</th>
+                        <th style="width: 18%">Detail / Player In</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in events %}
+                    <tr>
+                        <td class="small text-muted">{{ event.game_date_tr or '-' }}</td>
+                        <td class="fw-bold text-truncate">{{ event.home_club_name }} - {{ event.away_club_name }}</td>
+                        <td class="fw-bold">{{ event.minute }}'</td>
+                        <td>
+                            {% if 'Penalty' in (event.description or '') or event.type == 'Shootout' %}
+                                <span class="badge bg-danger">Penalty</span>
+                            {% elif event.type == 'Goals' %}
+                                <span class="badge bg-success">Goal</span>
+                            {% elif event.type == 'Substitutions' %}
+                                <span class="badge bg-primary">Sub</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ event.type_tr }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-truncate">{{ event.club_name or '-' }}</td>
+                        <td class="fw-bold text-truncate">{{ event.player_name or 'Unknown' }}</td>
+                        <td class="small text-muted text-start ps-3">
+                            {% if event.type == 'Substitutions' and event.player_in_name %}
+                                <div class="d-flex align-items-center text-success">
+                                    <i class="bi bi-box-arrow-in-left me-1"></i> 
+                                    <span class="fw-bold">{{ event.player_in_name }}</span>
+                                </div>
+                            {% else %}
+                                {{ event.description or '-' }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    {% if total_pages > 1 %}
+    <div class="d-flex flex-column align-items-center mt-4 mb-5">
+        
+        <nav aria-label="Page navigation" class="mb-3">
+            <ul class="pagination">
+                <li class="page-item {{ 'disabled' if page == 1 }}">
+                    <a class="page-link" href="{{ url_for('game_events.index', **dict(request.args, page=page-1)) }}">Previous</a>
+                </li>
+                {% for p in range([page - 2, 1]|max, [page + 2, total_pages]|min + 1) %}
+                <li class="page-item {{ 'active' if p == page else '' }}">
+                    <a class="page-link" href="{{ url_for('game_events.index', **dict(request.args, page=p)) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+                <li class="page-item {{ 'disabled' if page == total_pages }}">
+                    <a class="page-link" href="{{ url_for('game_events.index', **dict(request.args, page=page+1)) }}">Next</a>
+                </li>
+            </ul>
+        </nav>
+        
+        <form method="GET" action="{{ url_for('game_events.index') }}" class="d-flex align-items-center bg-light p-2 rounded border">
+            {% for key, value in request.args.items() %}
+                {% if key != 'page' %}
+                <input type="hidden" name="{{ key }}" value="{{ value }}">
+                {% endif %}
+            {% endfor %}
+            <span class="text-muted small me-2">Go to page:</span>
+            <input type="number" name="page" class="form-control form-control-sm me-2 text-center" style="width: 70px;" min="1" max="{{ total_pages }}" value="{{ page }}">
+            <button type="submit" class="btn btn-sm btn-dark">Go</button>
+            <span class="text-muted small ms-3">of {{ total_pages }}</span>
+        </form>
+
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
