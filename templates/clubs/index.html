@@ -1,0 +1,246 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="bi bi-shield-shaded"></i> Kulüp Yönetimi</h2>
+        
+        {% if session.get('role') == 'admin' %}
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addClubModal">
+            <i class="bi bi-plus-circle"></i> Yeni Kulüp Ekle
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="row">
+        <div class="col-md-3">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="bi bi-funnel"></i> Filtreler</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('clubs.index') }}">
+                        <div class="mb-3">
+                            <label class="form-label">Kulüp Adı</label>
+                            <input type="text" name="q" class="form-control" value="{{ filters.get('q', '') }}" placeholder="Örn: Galatasaray">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Lig ID</label>
+                            <input type="text" name="league" class="form-control" value="{{ filters.get('league', '') }}" placeholder="Örn: TR1">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Kadro Boyutu (2022)</label>
+                            <div class="input-group">
+                                <input type="number" name="min_squad" class="form-control" placeholder="Min" value="{{ filters.get('min_squad', '') }}">
+                                <span class="input-group-text">-</span>
+                                <input type="number" name="max_squad" class="form-control" placeholder="Max" value="{{ filters.get('max_squad', '') }}">
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">Uygula</button>
+                            <a href="{{ url_for('clubs.index') }}" class="btn btn-outline-secondary">Sıfırla</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-9">
+            <div class="card shadow-sm border-0">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Kulüp Adı</th>
+                                    <th>Lig</th>
+                                    <th>Kadro (Squad Size)</th>
+                                    {% if session.get('role') == 'admin' %}
+                                    <th>İşlemler</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for club in clubs %}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{ club.club_id }}</span></td>
+                                    
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            {% if club.image_url %}
+                                                <img src="{{ club.image_url }}" alt="Logo" class="rounded-circle me-2" width="30" height="30" style="object-fit: contain;">
+                                            {% endif %}
+                                            
+                                            {% if club.url %}
+                                                <a href="{{ club.url }}" target="_blank" class="text-decoration-none fw-bold text-dark">
+                                                    {{ club.name }} <i class="bi bi-box-arrow-up-right small text-muted" style="font-size: 0.7em;"></i>
+                                                </a>
+                                            {% else %}
+                                                <strong>{{ club.name }}</strong>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+
+                                    <td>
+                                        {% if club.league_name %}
+                                            {{ club.league_name }}
+                                            <br>
+                                            <small class="text-muted" style="font-size: 0.8em;">({{ club.domestic_competition_id }})</small>
+                                        {% else %}
+                                            {{ club.domestic_competition_id }}
+                                        {% endif %}
+                                    </td>
+
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-info" role="progressbar" style="width: {{ club.squad_size }}%;" aria-valuenow="{{ club.squad_size }}" aria-valuemin="0" aria-valuemax="50">
+                                                {{ club.squad_size }}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    {% if session.get('role') == 'admin' %}
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="editClub({{ club.club_id }})">
+                                                <i class="bi bi-pencil-square"></i> Düzenle
+                                            </button>
+                                            
+                                            <button class="btn btn-sm btn-outline-danger" onclick="deleteClub({{ club.club_id }})">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-4">Kayıt bulunamadı.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-white d-flex justify-content-between py-3">
+                    <small class="text-muted">Toplam {{ total_count }} kulüp gösteriliyor</small>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            {% if page > 1 %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('clubs.index', page=page-1, **filters) }}">« Önceki</a>
+                            </li>
+                            {% endif %}
+                            
+                            <li class="page-item disabled"><span class="page-link">{{ page }} / {{ total_pages }}</span></li>
+
+                            {% if page < total_pages %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('clubs.index', page=page+1, **filters) }}">Sonraki »</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if session.get('role') == 'admin' %}
+<div class="modal fade" id="addClubModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form action="{{ url_for('clubs.add_club') }}" method="POST">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Yeni Kulüp Ekle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Kulüp Adı</label>
+                        <input type="text" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Lig Kodu (Örn: TR1)</label>
+                        <input type="text" name="domestic_competition_id" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Kadro Boyutu</label>
+                        <input type="number" name="squad_size" class="form-control" value="25">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Kaydet</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="editClubModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form id="editClubForm" method="POST">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Kulübü Düzenle</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label>Kulüp Adı</label>
+                        <input type="text" id="edit_name" name="name" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Lig Kodu</label>
+                        <input type="text" id="edit_competition" name="domestic_competition_id" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Kadro Boyutu</label>
+                        <input type="number" id="edit_squad" name="squad_size" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="deleteForm" method="POST" style="display: none;"></form>
+{% endif %}
+
+<script>
+function editClub(clubId) {
+    fetch('/clubs/get/' + clubId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                alert('Hata: ' + data.error);
+                return;
+            }
+            document.getElementById('edit_name').value = data.name;
+            document.getElementById('edit_competition').value = data.domestic_competition_id;
+            document.getElementById('edit_squad').value = data.squad_size;
+            
+            document.getElementById('editClubForm').action = '/clubs/update/' + clubId;
+            
+            var myModal = new bootstrap.Modal(document.getElementById('editClubModal'));
+            myModal.show();
+        })
+        .catch(err => console.error('Hata:', err));
+}
+
+function deleteClub(clubId) {
+    if (confirm("Bu kulübü silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) {
+        // Silme işlemi için dinamik form gönderimi
+        var form = document.getElementById('deleteForm');
+        form.action = '/clubs/delete/' + clubId;
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

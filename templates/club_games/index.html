@@ -1,0 +1,266 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold"><i class="bi bi-calendar-event"></i> Maç Merkezi</h2>
+            <p class="text-muted">Fikstür ve Maç Sonuçları</p>
+        </div>
+        
+        {% if session.get('role') == 'admin' %}
+        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addMatchModal">
+            <i class="bi bi-plus-lg"></i> Yeni Maç Ekle
+        </button>
+        {% endif %}
+    </div>
+
+    <div class="card shadow-sm mb-4 border-0">
+        <div class="card-body bg-light rounded">
+            <form method="GET" action="{{ url_for('club_games.index') }}" class="row g-3">
+                <div class="col-md-5">
+                    <input type="text" name="q" class="form-control" placeholder="Takım veya Menajer ara..." value="{{ current_search or '' }}">
+                </div>
+                <div class="col-md-3">
+                    <select name="is_win" class="form-select">
+                        <option value="">Tüm Sonuçlar</option>
+                        <option value="1" {% if current_win == '1' %}selected{% endif %}>Galibiyet</option>
+                        <option value="0" {% if current_win == '0' %}selected{% endif %}>Mağlubiyet/Beraberlik</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrele</button>
+                </div>
+                <div class="col-md-2">
+                    <a href="{{ url_for('club_games.index') }}" class="btn btn-outline-secondary w-100">Sıfırla</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th class="py-3 ps-4">Tarih</th>
+                        <th class="py-3 text-end">Ev Sahibi</th>
+                        <th class="py-3 text-center" style="width: 100px;">Skor</th>
+                        <th class="py-3">Deplasman</th>
+                        <th class="py-3">Kendi Menajeri</th>
+                        <th class="py-3">Durum</th>
+                        {% if session.get('role') == 'admin' %}
+                        <th class="py-3 text-center">İşlemler</th>
+                        {% endif %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for game in stats %}
+                    <tr>
+                        <td class="ps-4 text-muted fw-bold" style="font-size: 0.9rem;">
+                            {{ game.date.strftime('%d/%m/%Y') if game.date else '-' }}
+                        </td>
+                        <td class="text-end fw-bold">
+                            {% if game.hosting == 'Home' %} {{ game.club_name }} {% else %} {{ game.opponent_name }} {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-secondary fs-6" style="min-width: 60px;">
+                                {% if game.hosting == 'Home' %} {{ game.own_goals }} - {{ game.opponent_goals }} {% else %} {{ game.opponent_goals }} - {{ game.own_goals }} {% endif %}
+                            </span>
+                        </td>
+                        <td class="fw-bold">
+                            {% if game.hosting == 'Away' %} {{ game.club_name }} {% else %} {{ game.opponent_name }} {% endif %}
+                        </td>
+                        <td class="text-muted small">
+                            <i class="bi bi-person"></i> 
+                            {% if game.own_manager_name %} {{ game.own_manager_name }} {% else %} <span class="fst-italic opacity-50">-</span> {% endif %}
+                        </td>
+                        <td>
+                            {% if game.is_win == 1 %}
+                                <span class="badge bg-success"><i class="bi bi-check-lg"></i> Kazandı</span>
+                            {% else %}
+                                <span class="badge bg-danger"><i class="bi bi-x-lg"></i> Kaybetti</span>
+                            {% endif %}
+                        </td>
+                        
+                        {% if session.get('role') == 'admin' %}
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <button class="btn btn-sm btn-outline-light text-dark bg-white" onclick="editMatch({{ game.game_id }})">
+                                    <i class="bi bi-pencil-square"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger bg-white" onclick="deleteMatch({{ game.game_id }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                        {% endif %}
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="{% if session.get('role') == 'admin' %}7{% else %}6{% endif %}" class="text-center py-5 text-muted">Kayıt bulunamadı.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="card-footer bg-white d-flex justify-content-between py-3">
+            <small class="text-muted">Toplam {{ total_count or 0 }} maç</small>
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page > 1 %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('club_games.index', page=page-1, q=current_search, is_win=current_win) }}">« Önceki</a></li>
+                    {% endif %}
+                    <li class="page-item disabled"><span class="page-link">{{ page }} / {{ total_pages }}</span></li>
+                    {% if page < total_pages %}
+                    <li class="page-item"><a class="page-link" href="{{ url_for('club_games.index', page=page+1, q=current_search, is_win=current_win) }}">Sonraki »</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+{% if session.get('role') == 'admin' %}
+<div class="modal fade" id="addMatchModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form action="{{ url_for('club_games.add_match') }}" method="POST">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Yeni Maç Ekle</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Tarih</label>
+                            <input type="date" name="date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-5 text-center">
+                            <label class="form-label fw-bold text-success">Ev Sahibi</label>
+                            <select name="home_club_id" class="form-select mb-2" required>
+                                {% for club in clubs %}
+                                <option value="{{ club.club_id }}">{{ club.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="home_manager" class="form-control form-control-sm" placeholder="Menajer">
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <label class="form-label fw-bold">Skor</label>
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                <input type="number" name="home_score" class="form-control text-center fw-bold" style="width: 50px;" required>
+                                <span>-</span>
+                                <input type="number" name="away_score" class="form-control text-center fw-bold" style="width: 50px;" required>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-center">
+                            <label class="form-label fw-bold text-danger">Deplasman</label>
+                            <select name="away_club_id" class="form-select mb-2" required>
+                                {% for club in clubs %}
+                                <option value="{{ club.club_id }}">{{ club.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="away_manager" class="form-control form-control-sm" placeholder="Menajer">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success">Kaydet</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="editMatchModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <form id="editMatchForm" method="POST">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">Maçı Düzenle</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label fw-bold">Tarih</label>
+                            <input type="date" id="edit_date" name="date" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="row align-items-center mb-3">
+                        <div class="col-md-5 text-center">
+                            <label class="form-label fw-bold text-primary">Ev Sahibi</label>
+                            <select id="edit_home_club" name="home_club_id" class="form-select mb-2" required>
+                                {% for club in clubs %}
+                                <option value="{{ club.club_id }}">{{ club.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" id="edit_home_manager" name="home_manager" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <div class="d-flex align-items-center justify-content-center gap-1">
+                                <input type="number" id="edit_home_score" name="home_score" class="form-control text-center fw-bold" style="width: 50px;" required>
+                                <span>-</span>
+                                <input type="number" id="edit_away_score" name="away_score" class="form-control text-center fw-bold" style="width: 50px;" required>
+                            </div>
+                        </div>
+                        <div class="col-md-5 text-center">
+                            <label class="form-label fw-bold text-danger">Deplasman</label>
+                            <select id="edit_away_club" name="away_club_id" class="form-select mb-2" required>
+                                {% for club in clubs %}
+                                <option value="{{ club.club_id }}">{{ club.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" id="edit_away_manager" name="away_manager" class="form-control form-control-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Güncelle</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<form id="deleteMatchForm" method="POST" style="display: none;"></form>
+
+<script>
+function editMatch(gameId) {
+    fetch('/club_games/get/' + gameId)
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) { alert(data.error); return; }
+            
+            // Tarih Formatlama (YYYY-MM-DD)
+            const dateObj = new Date(data.date);
+            const formattedDate = dateObj.toISOString().split('T')[0];
+            
+            document.getElementById('edit_date').value = formattedDate;
+            document.getElementById('edit_home_club').value = data.home_club_id;
+            document.getElementById('edit_away_club').value = data.away_club_id;
+            document.getElementById('edit_home_score').value = data.home_score;
+            document.getElementById('edit_away_score').value = data.away_score;
+            document.getElementById('edit_home_manager').value = data.home_manager || '';
+            document.getElementById('edit_away_manager').value = data.away_manager || '';
+            
+            document.getElementById('editMatchForm').action = '/club_games/update/' + gameId;
+            
+            new bootstrap.Modal(document.getElementById('editMatchModal')).show();
+        })
+        .catch(err => console.error(err));
+}
+
+function deleteMatch(gameId) {
+    if (confirm("Bu maçı silmek istediğinize emin misiniz?")) {
+        var form = document.getElementById('deleteMatchForm');
+        form.action = '/club_games/delete/' + gameId;
+        form.submit();
+    }
+}
+</script>
+{% endif %}
+{% endblock %}
